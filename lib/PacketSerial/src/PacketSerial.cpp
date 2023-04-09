@@ -54,7 +54,6 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
             onError(PS_ERR_START_UP_FAIL);
             return PS_ERR_START_UP_FAIL;
         } else {
-            Serial.println("Calling onStartup()");
             onStartup();
             return PS_PASS;
         }
@@ -230,8 +229,8 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
 
     /// @brief called when the [begin] method completes.
     void PacketSerial::onStartup(){
-    Serial.println("[PacketSerial] Running onStartup");
-};
+
+    };
 
     /// @brief Call [onError] to send the error code to the errQueue.
     ///
@@ -362,7 +361,6 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
         // add the address and return the string
         return addressStr+String(address, HEX);
     };
-
     
     void PacketSerial::printFrame(uint8_t data[], uint8_t dLen){
       Serial.println("-----------------------------------------");

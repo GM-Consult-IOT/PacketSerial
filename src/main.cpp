@@ -1,8 +1,15 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <PacketSerial.h>
-#include <DWIN_T5L_Display.h>
 
+/// @brief The valid headers that can be sent by the device.
+static const std::vector<uint16_t> headers{0x5aa5};
+
+/// @brief The hardware serial port to which the device is connected.
+HardwareSerial displayPort(2);
+
+/// @brief The device instance with its headers and serial port.
+PacketSerial display = PacketSerial(headers, & displayPort);
 
 /* Our imaginary device is a DWIN serial display that sends compass heading data.
 *  The data is sent in frames consisting of 9 bytes in the sequence 
@@ -20,24 +27,31 @@
 
 */
 
-uint16_t getHeading(ps_frame_t frame){
+uint16_t heading = -1;
+
+void getHeading(){
+  ps_frame_t frame = display.read();
   uint16_t address = ((frame.data[1]) << 8) | frame.data[2];
   if (address == 0x5000){
-    uint16_t heading = uint16_t(360 - (((frame.data[4]) << 8) | frame.data[5]) / 2);
-   return heading;
+     heading = uint16_t(360 - (((frame.data[4]) << 8) | frame.data[5]) / 2);
   }
-    return -1;
+
 }
 
+void displayReset(){
+        ps_frame_t frame {headers[0], 7, {0x82, 0x00, 0x04, 0x55, 0xAA, 0x5A, 0xA5}};
+        display.write(&frame);  
+    };
 
-/// @brief The valid headers that can be sent by the device.
-static const std::vector<uint16_t> headers{0x5aa5};
+void setPage(uint16_t page){
+        uint8_t data[] = {0x82, 0x00, 0x84, 0x5a, 0x01, highByte(page), lowByte(page)};
+        ps_frame_t frame {headers[0], 
+                    7, 
+                    {0x82, 0x00, 0x84, 0x5a, 0x01, highByte(page), lowByte(page)}};
+        display.write(&frame);        
+    };
 
-/// @brief The hardware serial port to which the device is connected.
-HardwareSerial displayPort(2);
 
-/// @brief The device instance with its headers and serial port.
-PacketSerial display = PacketSerial(headers, & displayPort);
 
 /// @brief A flag for when the display is successfully initialized.
 bool displayready = false;
@@ -67,14 +81,20 @@ void setup() {
 
   } else {
       // set the flag
+      displayReset();
+      delay(1000);
       displayready = true;
     // Do other stuff if the display initialized succesfully
+    delay(2500);
+    setPage(1);
   }
-
 }
 
 
 void loop() {
+  
+  // long delay alows testing of exception handler
+  delay(50);                          
   
   uint8_t error = 0xff;                 // placeholder for errors
 
@@ -90,11 +110,15 @@ void loop() {
   }
   /* Check for data from display regularly or the RX queue will fill up, 
   /* causing frames to be lost. The default queue is only 5 frames.*/
+  
   if (display.available()){
     while(display.available()>0){
-      ps_frame_t message = display.read();    // read all available frames
-      Serial.print("Heading: ");              // print the heading value
-      Serial.println(getHeading(message));      
+      getHeading();
+      if (heading<361 && heading >=0)
+      {
+        Serial.print("Heading: ");              // print the heading value
+        Serial.println(heading);      
+      }
     }
   }
  

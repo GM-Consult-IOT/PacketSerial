@@ -1,0 +1,24 @@
+{
+    "name": "PacketSerial",
+    "version": "0.0.1",
+    "description": "A serial port interface for devices that communicate using header delimited packets.",
+    "keywords": "serial, frame, packet",
+    "repository":
+        {
+            "type": "git",
+            "url": "https://github.com/GM-Consult-IOT/PacketSerial.git"
+        },
+    "authors":
+        [
+            {
+                "name": "Gerhard Malan",
+                "email": "gmalan@gmconsult.com.au",
+                "url": "https://github.com/GerhardMalan"
+            }
+        ],
+    "license": "BSD-3-Clause",
+    "homepage": "https://github.com/GM-Consult-IOT/PacketSerial",
+    "dependencies": [],
+    "frameworks": "arduino",
+    "platforms": "espressif32"
+  }

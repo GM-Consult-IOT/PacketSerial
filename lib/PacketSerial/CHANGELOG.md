@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+## 0.0.2
+
+Minor edits
+
 ## 0.0.1+2
 
 Minor edits

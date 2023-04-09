@@ -24,19 +24,23 @@
 #include <Arduino.h>
 #include <PacketSerial.h>
 
-PacketSerial:: PacketSerial(std::vector<uint16_t> rx_headers,
+PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
             #ifdef PS_USE_SOFTWARE_SERIAL
                 SoftwareSerial * port
             #else
                 HardwareSerial * port
             #endif
             ) :
-            headers(rx_headers),   
+            headers(headers_),   
             ps_serial_port(port), 
             rxQueue(NULL), 
             txQueue(NULL),
             errQueue(NULL){
 
+    };
+
+    uint16_t * PacketSerial::getHeaders(){
+        return headers.data();
     };
 
     ps_err_t PacketSerial::begin(){
@@ -48,9 +52,12 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> rx_headers,
         start_tx_task();
         if (retVal> 0){
             onError(PS_ERR_START_UP_FAIL);
+            return PS_ERR_START_UP_FAIL;
+        } else {
+            Serial.println("Calling onStartup()");
+            onStartup();
+            return PS_PASS;
         }
-        return retVal> 0? PS_ERR_START_UP_FAIL : PS_PASS; 
-
     };
 
 
@@ -220,6 +227,11 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
         // printFrame(frame->data, frame->data[2]+3); // debugging only
         
     };
+
+    /// @brief called when the [begin] method completes.
+    void PacketSerial::onStartup(){
+    Serial.println("[PacketSerial] Running onStartup");
+};
 
     /// @brief Call [onError] to send the error code to the errQueue.
     ///

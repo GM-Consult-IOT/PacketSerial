@@ -123,19 +123,19 @@ class PacketSerial{
 public:
     
 /// @brief Instantiates a [PacketSerial] instance.
-/// @param rx_pin 
-/// @param tx_pin 
-/// @param uart_no 
-PacketSerial(std::vector<uint16_t> rx_headers,
+/// @param headers_ 
+/// @param port 
+PacketSerial(std::vector<uint16_t> headers_,
     #ifdef PS_USE_SOFTWARE_SERIAL
         SoftwareSerial * port
     #else
         HardwareSerial * port
     #endif
 );
+// virtual ~PacketSerial();
 
 /// @brief Initializes the PacketSerial.
-ps_err_t begin();
+virtual ps_err_t begin();
 
 /// @brief Returns true if the receive queue contains data.
 /// @return true if the receive queue contains data.
@@ -156,6 +156,10 @@ uint8_t readError();
 /// @param data 
 uint8_t write (ps_frame_t * frame);
 
+/// @brief Returns the array of valid headers used by the PacketSerial instance.
+/// @return The array of valid headers used by the PacketSerial instance.
+uint16_t * getHeaders();
+
 protected:
 
 #ifdef PS_USE_SOFTWARE_SERIAL
@@ -164,7 +168,54 @@ protected:
     HardwareSerial * ps_serial_port;
 #endif // PS_USE_SOFTWARE_SERIAL
 
+/// @brief The valid headers used by the PacketSerial instance.
 std::vector<uint16_t> headers;
+
+/// @brief Called whenever a new frame is received from the serial port.
+///
+/// The base class implementation sends the frame to the rxQueue. Implementing
+/// classes can override [onSerialRx] to filter the frames or populate device
+/// properties (e.g. configuration) from the received frame.
+///
+/// @param frame The frame reveived from the display.
+virtual void onSerialRx(ps_byte_array_t * frame);
+
+/// @brief Called whenever a new frame is transmitted to the serial port.
+///
+/// The base class implementation sends the frame to the rxQueue. Implementing
+/// classes can override [onSerialRx] to filter the frames or populate device
+/// properties (e.g. configuration) from the received frame.
+///
+/// @param frame The frame sent to the display.
+virtual void onSerialTx(ps_byte_array_t * frame);
+
+/// @brief called when the [begin] method completes.
+virtual void onStartup();
+
+
+#ifdef PS_DEBUG
+/// @brief Returns an address string from the [address].
+String toHEX(uint8_t address);
+
+/// @brief Prints a frame to the debug serial port.
+void printFrame(uint8_t data[], uint8_t dLen);
+#endif //PS_DEBUG
+
+private:
+/// @brief Call [onError] to send the error code to the errQueue.
+///
+/// The [error] is sent to the errQueue. If the [errQueue] is full, the oldest error 
+/// is popped before the new [error] is pushed.
+///
+/// In debug mode the error is also printed to the serial monitor.
+/// @param error The [PS_ERR] error code as uint8_t.
+void onError(ps_err_t error);
+
+/// @brief  Returns true if the [header] is in the [headers] list.
+/// @param header The header to validate.
+/// @return true if the [header] is in the [headers] list.
+ps_err_t headerValid(ps_byte_array_t * byte_array);
+
 
 /// @brief The queue containing frames received from the display.
 QueueHandle_t txQueue;
@@ -208,44 +259,5 @@ static void serial_rx_impl(void* _this);
 /// @param parameter NULL
 static void serial_tx_impl(void* _this);
 
-/// @brief Call [onError] to send the error code to the errQueue.
-///
-/// The [error] is sent to the errQueue. If the [errQueue] is full, the oldest error 
-/// is popped before the new [error] is pushed.
-///
-/// In debug mode the error is also printed to the serial monitor.
-/// @param error The [PS_ERR] error code as uint8_t.
-void onError(ps_err_t error);
-
-/// @brief Called whenever a new frame is received from the serial port.
-///
-/// The base class implementation sends the frame to the rxQueue. Implementing
-/// classes can override [onSerialRx] to filter the frames or populate device
-/// properties (e.g. configuration) from the received frame.
-///
-/// @param frame The frame reveived from the display.
-void onSerialRx(ps_byte_array_t * frame);
-
-/// @brief Called whenever a new frame is transmitted to the serial port.
-///
-/// The base class implementation sends the frame to the rxQueue. Implementing
-/// classes can override [onSerialRx] to filter the frames or populate device
-/// properties (e.g. configuration) from the received frame.
-///
-/// @param frame The frame reveived from the display.
-void onSerialTx(ps_byte_array_t * frame);
-
-/// @brief  Returns true if the [header] is in the [headers] list.
-/// @param header The header to validate.
-/// @return true if the [header] is in the [headers] list.
-ps_err_t headerValid(ps_byte_array_t * byte_array);
-
-#ifdef PS_DEBUG
-/// @brief Returns an address string from the [address].
-String toHEX(uint8_t address);
-
-/// @brief Prints a frame to the debug serial port.
-void printFrame(uint8_t data[], uint8_t dLen);
-#endif //PS_DEBUG
-
 };
+

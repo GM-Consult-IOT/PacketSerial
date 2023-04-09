@@ -1,8 +1,15 @@
 <!-- PacketSerial -->
 
+## 0.0.4
+
+### BREAKING CHANGES:
+* Changed signature of `onError` method to take `uint8_t` as parameter `error`.
+* Changed scope of `onError` method to protected.
+
 ## 0.0.3
 
-Changed signature of onSerialRx and onSerialTx
+### BREAKING CHANGES:
+* Changed signature of `onSerialRx` and `onSerialTx`
 
 ## 0.0.2+2
 

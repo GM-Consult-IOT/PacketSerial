@@ -54,7 +54,7 @@ typedef struct PS_BYTE_ARRAY{
     uint8_t data[256];
     } ps_byte_array_t;
 
-
+/// @brief Enumeration of PacketSerial errors (range 0x00 - 0x0f).
 typedef enum PS_ERR{
     
     /// @brief The operation completed without error
@@ -88,7 +88,7 @@ typedef enum PS_ERR{
     PS_ERR_RX_TASK_START_FAIL = 0X09,
 
     /// @brief Failed to start the [serial_tx] task.
-    PS_ERR_TX_TASK_START_FAIL = 0X10,
+    PS_ERR_TX_TASK_START_FAIL = 0X0A,
 
 } ps_err_t;
 
@@ -203,7 +203,6 @@ String toHEX(uint8_t address);
 void printFrame(uint8_t data[], uint8_t dLen);
 #endif //PS_DEBUG
 
-private:
 /// @brief Call [onError] to send the error code to the errQueue.
 ///
 /// The [error] is sent to the errQueue. If the [errQueue] is full, the oldest error 
@@ -211,7 +210,10 @@ private:
 ///
 /// In debug mode the error is also printed to the serial monitor.
 /// @param error The [PS_ERR] error code as uint8_t.
-void onError(ps_err_t error);
+void onError(uint8_t error);
+
+private:
+
 
 /// @brief  Returns true if the [header] is in the [headers] list.
 /// @param header The header to validate.

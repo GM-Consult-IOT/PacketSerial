@@ -242,7 +242,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     ///
     /// In debug mode the error is also printed to the serial monitor.
     /// @param error The [PS_ERR] error code as uint8_t.
-    void PacketSerial::onError(ps_err_t error){
+    void PacketSerial::onError(uint8_t error){
         #ifdef PS_DEBUG
             Serial.print("Exception [");
             Serial.print(toHEX(error));
@@ -348,7 +348,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
             PS_CORE) == pdPASS){
             return PS_PASS; 
         };  
-         onError(PS_ERR_TX_TASK_START_FAIL);
+        onError(PS_ERR_TX_TASK_START_FAIL);
         return PS_ERR_TX_TASK_START_FAIL;
     };
 

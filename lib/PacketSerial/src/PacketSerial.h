@@ -50,7 +50,7 @@ typedef uint16_t ps_header_t;
 ///
 /// A frame always starts with a header (two characters) followed
 /// by a character that specifies the number of data bits to follow.
-typedef struct {
+typedef struct PS_BYTE_ARRAY{
     uint8_t data[256];
     } ps_byte_array_t;
 
@@ -95,7 +95,7 @@ typedef enum PS_ERR{
 
 /// @brief A datapacket exchanged with the display via serial communication.
 /// If [address] is 0x0000 then the packet is considered empty/null.
-typedef struct {
+typedef struct PS_FRAME{
 
     ps_header_t header;
 
@@ -105,18 +105,20 @@ typedef struct {
     /// @brief The frame data as a uint8_t-array.
     std::vector<uint8_t> data;
 
+    PS_FRAME(){};
+
+    PS_FRAME(ps_header_t header_,  ps_length_t length_, std::vector<uint8_t> data_):
+        header(header_),length(length_),data(data_) {};
+
+    PS_FRAME(ps_byte_array_t * frame){
+        header = ((frame->data[0]) << 8) | frame->data[1];
+                length = frame->data[2];
+                for (uint8_t i = 3; i<3+length; i++){
+                    data.push_back(frame->data[i]);
+                };
+    }
+
 } ps_frame_t;    
-
-  /* Config container */
-  typedef struct{
-    #ifdef PS_USE_SOFTWARE_SERIAL
-      SoftwareSerial * ps_ps_serial_port_handle;
-    #else
-      HardwareSerial * ps_ps_serial_port_handle;
-    #endif // PS_USE_SOFTWARE_SERIAL
-  } ps_ps_serial_port_t;
-
-
 
 class PacketSerial{
     
@@ -178,7 +180,7 @@ std::vector<uint16_t> headers;
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame reveived from the display.
-virtual void onSerialRx(ps_byte_array_t * frame);
+virtual void onSerialRx(ps_frame_t * frame);
 
 /// @brief Called whenever a new frame is transmitted to the serial port.
 ///
@@ -187,7 +189,7 @@ virtual void onSerialRx(ps_byte_array_t * frame);
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame sent to the display.
-virtual void onSerialTx(ps_byte_array_t * frame);
+virtual void onSerialTx(ps_frame_t * frame);
 
 /// @brief called when the [begin] method completes.
 virtual void onStartup();

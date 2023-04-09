@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+## 0.0.3
+
+Changed signature of onSerialRx and onSerialTx
+
 ## 0.0.2+2
 
 Minor edits

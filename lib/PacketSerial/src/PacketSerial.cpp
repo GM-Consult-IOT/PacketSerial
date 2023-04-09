@@ -69,11 +69,12 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
         if (uxQueueMessagesWaiting(rxQueue)>0){
             ps_byte_array_t frame;
             if(xQueueReceive(rxQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){               
-                msg.header = ((frame.data[0]) << 8) | frame.data[1];
-                msg.length = frame.data[2];
-                for (uint8_t i = 3; i<3+msg.length; i++){
-                    msg.data.push_back(frame.data[i]);
-                }
+                msg = PS_FRAME(&frame);
+                // msg.header = ((frame.data[0]) << 8) | frame.data[1];
+                // msg.length = frame.data[2];
+                // for (uint8_t i = 3; i<3+msg.length; i++){
+                //     msg.data.push_back(frame.data[i]);
+                // }
             }
         } 
         return msg;       
@@ -98,8 +99,9 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
         for(;;){
             vTaskDelay(100/portTICK_RATE_MS);
                 ps_byte_array_t frame;
-                if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){      
-                    onSerialTx(&frame);        
+                if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){
+                    ps_frame_t frm = PS_FRAME(&frame);      
+                    onSerialTx(&(frm));        
                     ps_length_t lenD = frame.data[2];
                     std::vector<uint8_t> v;                    
                     v.insert(v.end(), &frame.data[0], &frame.data[lenD+3]);
@@ -117,7 +119,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// properties (e.g. configuration) from the received frame.
     ///
     /// @param frame The frame reveived from the display.
-    void PacketSerial:: onSerialTx(ps_byte_array_t * frame){};
+    void PacketSerial:: onSerialTx(ps_frame_t * frame){};
 
 
     /// @brief  Returns true if the [header] is in the [headers] list.
@@ -187,7 +189,8 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
                         break;
                     }
                      if (bc > maxBytes -1 && headerValid(&frame) == PS_PASS){
-                        onSerialRx(&frame);
+                        ps_frame_t frm = PS_FRAME(&frame);
+                        onSerialRx(&frm);
                         send_to_frame_queue(rxQueue, &frame);
                         bc = 0;
                         lenF = 0;
@@ -222,7 +225,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// (e.g. configuration) from the received frame.
     ///
     /// @param frame The frame reveived from the display.
-    void PacketSerial::onSerialRx(ps_byte_array_t * frame){
+    void PacketSerial::onSerialRx(ps_frame_t * frame){
         // printFrame(frame->data, frame->data[2]+3); // debugging only
         
     };

@@ -137,7 +137,7 @@ PacketSerial(std::vector<uint16_t> headers_,
 // virtual ~PacketSerial();
 
 /// @brief Initializes the PacketSerial.
-virtual ps_err_t begin();
+virtual uint8_t begin();
 
 /// @brief Returns true if the receive queue contains data.
 /// @return true if the receive queue contains data.
@@ -180,7 +180,7 @@ std::vector<uint16_t> headers;
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame reveived from the display.
-virtual void onSerialRx(ps_frame_t * frame);
+virtual uint8_t onSerialRx(ps_frame_t * frame);
 
 /// @brief Called whenever a new frame is transmitted to the serial port.
 ///
@@ -192,7 +192,7 @@ virtual void onSerialRx(ps_frame_t * frame);
 virtual void onSerialTx(ps_frame_t * frame);
 
 /// @brief called when the [begin] method completes.
-virtual void onStartup();
+virtual uint8_t onStartup();
 
 
 #ifdef PS_DEBUG

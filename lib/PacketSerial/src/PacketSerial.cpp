@@ -43,7 +43,7 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
         return headers.data();
     };
 
-    ps_err_t PacketSerial::begin(){
+    uint8_t PacketSerial::begin(){
         uint8_t retVal = 0x00;
         retVal += create_err_queue();
         create_rx_queue();
@@ -54,8 +54,7 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
             onError(PS_ERR_START_UP_FAIL);
             return PS_ERR_START_UP_FAIL;
         } else {
-            onStartup();
-            return PS_PASS;
+            return onStartup();            
         }
     };
 
@@ -225,14 +224,13 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// (e.g. configuration) from the received frame.
     ///
     /// @param frame The frame reveived from the display.
-    void PacketSerial::onSerialRx(ps_frame_t * frame){
-        // printFrame(frame->data, frame->data[2]+3); // debugging only
-        
+    uint8_t PacketSerial::onSerialRx(ps_frame_t * frame){
+        return PS_PASS; 
     };
 
     /// @brief called when the [begin] method completes.
-    void PacketSerial::onStartup(){
-
+    uint8_t PacketSerial::onStartup(){
+        return PS_PASS; 
     };
 
     /// @brief Call [onError] to send the error code to the errQueue.

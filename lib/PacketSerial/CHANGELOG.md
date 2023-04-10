@@ -1,5 +1,11 @@
 <!-- PacketSerial -->
 
+
+## 0.0.5
+
+### BREAKING CHANGES:
+* Changed return value of `onStartup` method.
+
 ## 0.0.4
 
 ### BREAKING CHANGES:

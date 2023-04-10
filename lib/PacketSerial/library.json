@@ -1,6 +1,6 @@
 {
     "name": "PacketSerial",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "A serial port interface for devices that communicate using header delimited packets.",
     "keywords": "serial, frame, packet",
     "repository":

@@ -21,6 +21,8 @@
  * 
 */
 
+
+
 #include <PacketSerial_Typedef.h>
 #include <Arduino.h>
 #include <vector>
@@ -212,14 +214,6 @@ void printFrame(uint8_t data[], uint8_t dLen);
 /// @param error The [PS_ERR] error code as uint8_t.
 void onError(uint8_t error);
 
-private:
-
-
-/// @brief  Returns true if the [header] is in the [headers] list.
-/// @param header The header to validate.
-/// @return true if the [header] is in the [headers] list.
-ps_err_t headerValid(ps_byte_array_t * byte_array);
-
 
 /// @brief The queue containing frames received from the display.
 QueueHandle_t txQueue;
@@ -237,6 +231,12 @@ void serial_rx(void);
 /// @brief The task that processes with data sent to the display on [serialPort].
 /// @param parameter NULL
 void serial_tx(void);
+
+/// @brief  Returns true if the [header] is in the [headers] list.
+/// @param header The header to validate.
+/// @return true if the [header] is in the [headers] list.
+ps_err_t headerValid(ps_byte_array_t * byte_array);
+
 
 ps_err_t send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
 

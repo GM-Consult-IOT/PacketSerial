@@ -46,11 +46,11 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
     uint8_t PacketSerial::begin(){
         uint8_t retVal = 0x00;
         retVal += create_err_queue();
-        create_rx_queue();
-        create_tx_queue();
-        start_rx_task();
-        start_tx_task();
-        if (retVal> 0){
+        retVal += create_rx_queue();
+        retVal += create_tx_queue();
+        retVal += start_rx_task();
+        retVal += start_tx_task();
+        if (retVal > 0){
             onError(PS_ERR_START_UP_FAIL);
             return PS_ERR_START_UP_FAIL;
         } else {
@@ -69,11 +69,6 @@ PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
             ps_byte_array_t frame;
             if(xQueueReceive(rxQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){               
                 msg = PS_FRAME(&frame);
-                // msg.header = ((frame.data[0]) << 8) | frame.data[1];
-                // msg.length = frame.data[2];
-                // for (uint8_t i = 3; i<3+msg.length; i++){
-                //     msg.data.push_back(frame.data[i]);
-                // }
             }
         } 
         return msg;       

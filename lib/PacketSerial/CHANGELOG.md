@@ -1,6 +1,12 @@
 <!-- PacketSerial -->
 
 
+## 0.0.5+1
+
+### BREAKING CHANGES:
+* Changed value of `PS_ERR_START_UP_FAIL` to 0xff.
+* Added `setBitValues` method.
+
 ## 0.0.5
 
 ### BREAKING CHANGES:
@@ -15,7 +21,7 @@
 ## 0.0.3
 
 ### BREAKING CHANGES:
-* Changed signature of `onSerialRx` and `onSerialTx`
+* Changed signature of `onSerialRx` and `onSerialTx`.
 
 ## 0.0.2+2
 

@@ -371,6 +371,20 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     };
     #endif //PS_DEBUG
 
-
+    /// @brief Sets the bits in [oldValue] from [newValue] using the [mask].
+    /// @param oldValue The byte that will be changed.
+    /// @param newValue The new value from which the bits will be copied.
+    /// @param mask The mask used to copy bits from [newValue] to [oldValue].
+    /// @return A clone of [oldValue] with only the [mask] bits changed to match
+    /// [newValue].   
+     uint8_t PacketSerial::setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask){
+        Serial.print(oldValue,BIN);Serial.print(" / "); Serial.print(newValue,BIN);Serial.print(" / ");Serial.println(mask,BIN);
+        uint8_t retval = oldValue & ~mask;
+        Serial.print(oldValue,BIN);Serial.print(" >> "); 
+        Serial.print(retval,BIN);Serial.print(" >> ");
+        retval = retval | (newValue & mask);
+        Serial.println(retval,BIN);
+        return (oldValue & ~mask) | (newValue & mask);
+    };
 
 

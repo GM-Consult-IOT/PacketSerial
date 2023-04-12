@@ -63,7 +63,7 @@ typedef enum PS_ERR{
     PS_PASS  = 0x00,
 
     // @brief One or more errors occurred during execution of the [begin] method.
-    PS_ERR_START_UP_FAIL  = 0x01,
+    PS_ERR_START_UP_FAIL  = 0xff,
 
     /// @brief The frame header is not in the [headers] list.
     PS_ERR_INVALID_HEADER = 0X02,
@@ -96,7 +96,7 @@ typedef enum PS_ERR{
 
 
 /// @brief A datapacket exchanged with the display via serial communication.
-/// If [address] is 0x0000 then the packet is considered empty/null.
+/// If [header] is 0x0000 then the packet is considered empty/null.
 typedef struct PS_FRAME{
 
     ps_header_t header;
@@ -237,7 +237,6 @@ void serial_tx(void);
 /// @return true if the [header] is in the [headers] list.
 ps_err_t headerValid(ps_byte_array_t * byte_array);
 
-
 ps_err_t send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
 
 /// @brief Create the serial RX queue.
@@ -262,6 +261,14 @@ static void serial_rx_impl(void* _this);
 /// @brief The task that processes with data sent to the display on [serialPort].
 /// @param parameter NULL
 static void serial_tx_impl(void* _this);
+
+/// @brief Sets the bits in [oldValue] from [newValue] using the [mask].
+/// @param oldValue The byte that will be changed.
+/// @param newValue The new value from which the bits will be copied.
+/// @param mask The mask used to copy bits from [newValue] to [oldValue].
+/// @return A clone of [oldValue] with only the [mask] bits changed to match
+/// [newValue].   
+    uint8_t setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask);
 
 };
 

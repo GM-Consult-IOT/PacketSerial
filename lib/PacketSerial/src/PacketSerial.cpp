@@ -11,7 +11,7 @@
 * 
 * @section author Author
 * 
-* Gerhard Malan for GM COnsult Pty Ltd
+* Gerhard Malan for GM Consult Pty Ltd
 * 
  * @section license License
  * 
@@ -21,11 +21,12 @@
  * 
 */
 
-#include <Arduino.h>
 #include <PacketSerial.h>
 
+#include <Arduino.h>
+
 PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
-            #ifdef PS_USE_SOFTWARE_SERIAL
+            #if PS_USE_SOFTWARE_SERIAL
                 SoftwareSerial * port
             #else
                 HardwareSerial * port
@@ -236,7 +237,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// In debug mode the error is also printed to the serial monitor.
     /// @param error The [PS_ERR] error code as uint8_t.
     void PacketSerial::onError(uint8_t error){
-        #ifdef PS_DEBUG
+        #if PS_DEBUG
             Serial.print("Exception [");
             Serial.print(toHEX(error));
             Serial.println("] was thrown in class [PacketSerial].");
@@ -245,7 +246,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
             uint8_t poppedErr;
             while(uxQueueSpacesAvailable(errQueue) < 2){
                 xQueueReceive(errQueue, &(poppedErr), ( TickType_t ) 10 ) ;
-                #ifdef PS_DEBUG
+                #if PS_DEBUG
                     Serial.print("The errQueue is full. Error code [");
                     Serial.print(poppedErr);
                     Serial.println("] popped to make space.");
@@ -345,7 +346,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
         return PS_ERR_TX_TASK_START_FAIL;
     };
 
-    #ifdef PS_DEBUG
+    #if PS_DEBUG
     // Returns an address string from the [address].
     String PacketSerial::toHEX(uint8_t address){
     // prefix with "0x"

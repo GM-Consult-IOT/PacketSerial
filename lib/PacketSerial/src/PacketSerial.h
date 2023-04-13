@@ -7,11 +7,12 @@
 *
 * @section intro_sec_Introduction
 *
-* An Arduino C++ library for interfacing with serial displays.
+* An Arduino C++ library for interfacing with serial devices that communicate with
+* data packets that start with a header word and length byte.
 * 
 * @section author Author
 * 
-* Gerhard Malan for GM COnsult Pty Ltd
+* Gerhard Malan for GM Consult Pty Ltd
 * 
  * @section license License
  * 
@@ -22,18 +23,109 @@
 */
 
 
+#ifndef PACKET_SERIAL
 
-#include <PacketSerial_Typedef.h>
-#include <Arduino.h>
+#define PACKET_SERIAL
+
+#pragma once
+
+#include "main.h"
+
+#ifndef PS_DEBUG
+/// @brief Set to true to enable printing of debug information to Serial.
+#define PS_DEBUG true
+#endif // PS_DEBUG
+
+#if ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
 #include <vector>
-#include <HardwareSerial.h>
+        
+#ifndef PS_USE_SOFTWARE_SERIAL
+/// @brief Set to true to use software serial.
+#define PS_USE_SOFTWARE_SERIAL false
+#endif // PS_USE_SOFTWARE_SERIAL
 
-#ifndef __PLATFORM_IS_ESP32__
+/// @brief The priority of the serial monitor tasks.
+#ifndef PS_TASK_PRIORITY
+#define PS_TASK_PRIORITY 1
+#endif // PS_TASK_PRIORITY
+
+#ifndef PS_RX_STACK_SIZE
+/// @brief The stack size for the serial port RX task.
+#define PS_RX_STACK_SIZE 10800
+#endif // PS_RX_STACK_SIZE
+
+#ifndef PS_TX_STACK_SIZE
+/// @brief The stack size for the serial port TX task
+#define PS_TX_STACK_SIZE 10800
+#endif // PS_TX_STACK_SIZE
+
+#ifndef PS_RX_QUEUE_LENGTH
+/// @brief The length of the RX queue.
+/// 
+/// Increasing the queue length may require an increase in stack size. 
+#define PS_RX_QUEUE_LENGTH 10
+#endif // PS_RX_QUEUE_LENGTH
+
+#ifndef PS_TX_QUEUE_LENGTH
+/// @brief The length of the TX queue.
+/// 
+/// Increasing the queue length may require an increase in stack size. 
+#define PS_TX_QUEUE_LENGTH 5
+#endif // PS_TX_QUEUE_LENGTH
+
+#ifndef PS_ERR_QUEUE_LENGTH
+/// @brief The length of the ERROR queue.
+/// 
+/// Increasing the queue length may require an increase in stack size. 
+#define PS_ERR_QUEUE_LENGTH 255
+#endif // PS_ERR_QUEUE_LENGTH
+
+#ifndef PS_BAUD
+/// @brief The default serial port speed.
+#define PS_BAUD 115200
+#endif // PS_BAUD
+
+#ifndef PS_CORE
+/// @brief The processor core that runs the serial port processes.
+#define PS_CORE 1
+#endif // PS_CORE
+
+#ifndef PS_RX_TASK_NAME
+/// @brief The name of the serial port RX task.
+#define PS_RX_TASK_NAME "PS_RX_TASK"
+#endif // PS_RX_TASK_NAME
+
+#ifndef PS_TX_TASK_NAME
+/// @brief The name of the serial port TX task.
+#define PS_TX_TASK_NAME "PS_TX_TASK"
+#endif // PS_TX_TASK_NAME
+
+#ifndef PLATFORM_IS_ESP32
+/// @brief Set to true if the platform is ESP32.
+#define PLATFORM_IS_ESP32 true
+#endif // PLATFORM_IS_ESP32
+
+/*! @brief Loads the FreeRTOS libraries if the platform is not ESP32
+*  The ESP32 platform includes FreeRTOS and the FreeRTOS libraries do
+*  not have to be loaded seperately.*/
+#if !PLATFORM_IS_ESP32
     #include "freeRTOS/FreeRTOS.h"
     #include "freertos/task.h"
     #include "freertos/queue.h"
 #endif //__PLATFORM_IS_ESP32__
 
+#if PS_USE_SOFTWARE_SERIAL
+    #include <SoftwareSerial.h>             // featherfly/SoftwareSerial@^1.0
+#else
+    #include <HardwareSerial.h>
+    // #define PS_HWS_RX_GPIO 16               // The RX GPIO.
+    // #define PS_HWS_TX_GPIO 17               // The TX GPIO.
+    // #define PS_HWS_INVERT_LOGIC false       // Invert the pin logic to active high.
+#endif // PS_USE_SOFTWARE_SERIAL
 
 
 /// @brief The number of data characters in the frame.
@@ -122,6 +214,10 @@ typedef struct PS_FRAME{
 
 } ps_frame_t;    
 
+/*!
+* @brief Serial communication wrapper for interfacing with serial devices 
+* that use data packets that start with a header word and length byte.
+*/
 class PacketSerial{
     
 public:
@@ -130,7 +226,7 @@ public:
 /// @param headers_ 
 /// @param port 
 PacketSerial(std::vector<uint16_t> headers_,
-    #ifdef PS_USE_SOFTWARE_SERIAL
+    #if PS_USE_SOFTWARE_SERIAL
         SoftwareSerial * port
     #else
         HardwareSerial * port
@@ -166,7 +262,7 @@ uint16_t * getHeaders();
 
 protected:
 
-#ifdef PS_USE_SOFTWARE_SERIAL
+#if PS_USE_SOFTWARE_SERIAL
     SoftwareSerial * ps_serial_port;
 #else
     HardwareSerial * ps_serial_port;
@@ -197,12 +293,14 @@ virtual void onSerialTx(ps_frame_t * frame);
 virtual uint8_t onStartup();
 
 
-#ifdef PS_DEBUG
+#if PS_DEBUG
+
 /// @brief Returns an address string from the [address].
 String toHEX(uint8_t address);
 
 /// @brief Prints a frame to the debug serial port.
 void printFrame(uint8_t data[], uint8_t dLen);
+
 #endif //PS_DEBUG
 
 /// @brief Call [onError] to send the error code to the errQueue.
@@ -272,3 +370,4 @@ static void serial_tx_impl(void* _this);
 
 };
 
+#endif //PACKET_SERIAL

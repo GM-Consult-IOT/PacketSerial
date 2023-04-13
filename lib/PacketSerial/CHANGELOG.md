@@ -6,6 +6,7 @@
 ### BREAKING CHANGES:
 * Changed value of `PS_ERR_START_UP_FAIL` to 0xff.
 * Added `setBitValues` method.
+* Re-organized dependencies and defines
 
 ## 0.0.5
 

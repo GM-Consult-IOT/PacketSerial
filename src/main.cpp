@@ -19,7 +19,7 @@
     //     /* Uncomment this define to use software serial. */
     //     // #define PS_USE_SOFTWARE_SERIAL
 
-    //     #ifdef PS_USE_SOFTWARE_SERIAL
+    //     #if PS_USE_SOFTWARE_SERIAL
     //         #include <SoftwareSerial.h>             // featherfly/SoftwareSerial@^1.0
     //     #else
     //         #include <HardwareSerial.h>

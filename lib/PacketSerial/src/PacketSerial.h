@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "main.h"
+// #include "main.h"
 
 #ifndef PS_DEBUG
 /// @brief Set to true to enable printing of debug information to Serial.
@@ -48,8 +48,8 @@
 #define PS_USE_SOFTWARE_SERIAL false
 #endif // PS_USE_SOFTWARE_SERIAL
 
-/// @brief The priority of the serial monitor tasks.
 #ifndef PS_TASK_PRIORITY
+/// @brief The priority of the serial monitor tasks.
 #define PS_TASK_PRIORITY 1
 #endif // PS_TASK_PRIORITY
 

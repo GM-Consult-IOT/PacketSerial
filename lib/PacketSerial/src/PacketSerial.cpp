@@ -25,20 +25,6 @@
 
 #include <Arduino.h>
 
-PacketSerial:: PacketSerial(std::vector<uint16_t> headers_,
-            #if PS_USE_SOFTWARE_SERIAL
-                SoftwareSerial * port
-            #else
-                HardwareSerial * port
-            #endif
-            ) :
-            headers(headers_),   
-            ps_serial_port(port), 
-            rxQueue(NULL), 
-            txQueue(NULL),
-            errQueue(NULL){
-
-    };
 
     uint16_t * PacketSerial::getHeaders(){
         return headers.data();
@@ -237,20 +223,10 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// In debug mode the error is also printed to the serial monitor.
     /// @param error The [PS_ERR] error code as uint8_t.
     void PacketSerial::onError(uint8_t error){
-        #if PS_DEBUG
-            Serial.print("Exception [");
-            Serial.print(toHEX(error));
-            Serial.println("] was thrown in class [PacketSerial].");
-        #endif   
         if (uxQueueSpacesAvailable(errQueue) <2) {
             uint8_t poppedErr;
             while(uxQueueSpacesAvailable(errQueue) < 2){
-                xQueueReceive(errQueue, &(poppedErr), ( TickType_t ) 10 ) ;
-                #if PS_DEBUG
-                    Serial.print("The errQueue is full. Error code [");
-                    Serial.print(poppedErr);
-                    Serial.println("] popped to make space.");
-                #endif     
+                xQueueReceive(errQueue, &(poppedErr), ( TickType_t ) 10 ) ;  
             }
             uint8_t full_err = PS_ERR_ERR_QUEUE_FULL;
             xQueueSend(errQueue, ( void * ) &full_err, (TickType_t ) 10) ;
@@ -346,31 +322,9 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
         return PS_ERR_TX_TASK_START_FAIL;
     };
 
-    #if PS_DEBUG
-    // Returns an address string from the [address].
-    String PacketSerial::toHEX(uint8_t address){
-    // prefix with "0x"
-    String addressStr = "0x";
-        if (address<16) {
-            // add "0" if less than 16
-            addressStr = addressStr + "0";
-        }
-        // add the address and return the string
-        return addressStr+String(address, HEX);
-    };
-    
-    void PacketSerial::printFrame(uint8_t data[], uint8_t dLen){
-      Serial.println("-----------------------------------------");
-        Serial.print("frame = [");
-        for (uint8_t i = 0; i < dLen; i++){
-        if (i>0){ 
-            Serial.print(", ");  
-        }
-        Serial.print(toHEX(data[i]));
-        }
-        Serial.println("]");
-    };
-    #endif //PS_DEBUG
+
+
+
 
     /// @brief Sets the bits in [oldValue] from [newValue] using the [mask].
     /// @param oldValue The byte that will be changed.

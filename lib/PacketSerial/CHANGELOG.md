@@ -1,6 +1,12 @@
 <!-- PacketSerial -->
 
 
+## 0.0.6
+
+### BREAKING CHANGES
+* Changed structure of #defines and consts to fix usses with `PS_DEBUG` usage.
+* Added `print` methods to `PS_BYTE_ARRAY` and `PS_FRAME`.
+
 ## 0.0.5+1
 
 ### BREAKING CHANGES:

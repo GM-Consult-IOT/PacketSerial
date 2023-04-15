@@ -22,92 +22,19 @@
  * 
 */
 
-
 #ifndef PACKET_SERIAL
 
 #define PACKET_SERIAL
 
-#pragma once
-
-// #include "main.h"
-
-#ifndef PS_DEBUG
-/// @brief Set to true to enable printing of debug information to Serial.
-#define PS_DEBUG true
-#endif // PS_DEBUG
+#include "ps_config.h"
 
 #if ARDUINO >= 100
 #include "Arduino.h"
 #else
 #include "WProgram.h"
 #endif
+
 #include <vector>
-        
-#ifndef PS_USE_SOFTWARE_SERIAL
-/// @brief Set to true to use software serial.
-#define PS_USE_SOFTWARE_SERIAL false
-#endif // PS_USE_SOFTWARE_SERIAL
-
-#ifndef PS_TASK_PRIORITY
-/// @brief The priority of the serial monitor tasks.
-#define PS_TASK_PRIORITY 1
-#endif // PS_TASK_PRIORITY
-
-#ifndef PS_RX_STACK_SIZE
-/// @brief The stack size for the serial port RX task.
-#define PS_RX_STACK_SIZE 10800
-#endif // PS_RX_STACK_SIZE
-
-#ifndef PS_TX_STACK_SIZE
-/// @brief The stack size for the serial port TX task
-#define PS_TX_STACK_SIZE 10800
-#endif // PS_TX_STACK_SIZE
-
-#ifndef PS_RX_QUEUE_LENGTH
-/// @brief The length of the RX queue.
-/// 
-/// Increasing the queue length may require an increase in stack size. 
-#define PS_RX_QUEUE_LENGTH 10
-#endif // PS_RX_QUEUE_LENGTH
-
-#ifndef PS_TX_QUEUE_LENGTH
-/// @brief The length of the TX queue.
-/// 
-/// Increasing the queue length may require an increase in stack size. 
-#define PS_TX_QUEUE_LENGTH 5
-#endif // PS_TX_QUEUE_LENGTH
-
-#ifndef PS_ERR_QUEUE_LENGTH
-/// @brief The length of the ERROR queue.
-/// 
-/// Increasing the queue length may require an increase in stack size. 
-#define PS_ERR_QUEUE_LENGTH 255
-#endif // PS_ERR_QUEUE_LENGTH
-
-#ifndef PS_BAUD
-/// @brief The default serial port speed.
-#define PS_BAUD 115200
-#endif // PS_BAUD
-
-#ifndef PS_CORE
-/// @brief The processor core that runs the serial port processes.
-#define PS_CORE 1
-#endif // PS_CORE
-
-#ifndef PS_RX_TASK_NAME
-/// @brief The name of the serial port RX task.
-#define PS_RX_TASK_NAME "PS_RX_TASK"
-#endif // PS_RX_TASK_NAME
-
-#ifndef PS_TX_TASK_NAME
-/// @brief The name of the serial port TX task.
-#define PS_TX_TASK_NAME "PS_TX_TASK"
-#endif // PS_TX_TASK_NAME
-
-#ifndef PLATFORM_IS_ESP32
-/// @brief Set to true if the platform is ESP32.
-#define PLATFORM_IS_ESP32 true
-#endif // PLATFORM_IS_ESP32
 
 /*! @brief Loads the FreeRTOS libraries if the platform is not ESP32
 *  The ESP32 platform includes FreeRTOS and the FreeRTOS libraries do
@@ -140,13 +67,44 @@ typedef uint8_t ps_length_t;
 typedef uint16_t ps_header_t;
 
 
+#if PS_DEBUG
+
+
+
+#endif // PS_DEBUG
+
+
 /// @brief Serial data frame consisting of up to 256 bytes.
 ///
 /// A frame always starts with a header (two characters) followed
 /// by a character that specifies the number of data bits to follow.
 typedef struct PS_BYTE_ARRAY{
-    uint8_t data[256];
+    uint8_t data[MAX_FRAME_LENGTH];
+    
+    PS_BYTE_ARRAY(){};
+
+    PS_BYTE_ARRAY(std::vector<uint8_t> * v){
+        for (uint8_t i = 0; i < v->size(); i++){
+            data[i] = v->data()[i];
+        }
+    }
+
+    #if PS_DEBUG
+    void print(uint8_t dLen = MAX_FRAME_LENGTH){
+        for (uint8_t i = 0; i < dLen; i++){
+        if (i>0){ 
+            Serial.print(", ");  
+        }
+        Serial.print(data[i] > 16? 
+            "0x" + String(data[i], HEX): 
+            "0x0" + String(data[i], HEX));
+        }
+    };
+    # endif // PS_DEBUG
+    
     } ps_byte_array_t;
+
+
 
 /// @brief Enumeration of PacketSerial errors (range 0x00 - 0x0f).
 typedef enum PS_ERR{
@@ -210,8 +168,30 @@ typedef struct PS_FRAME{
                 for (uint8_t i = 3; i<3+length; i++){
                     data.push_back(frame->data[i]);
                 };
-    }
+    };
 
+    #if PS_DEBUG
+
+    String _toHEX(uint8_t b){
+        return b > 16? 
+            "0x" + String(b, HEX): 
+            "0x0" + String(b, HEX);
+            };
+
+    /// @brief Prints the frame all on one line with commas between the bytes.
+    void print(){       
+        Serial.print(_toHEX(highByte(header)));
+        Serial.print(", ");
+        Serial.print(_toHEX(lowByte(header)));
+        Serial.print(", ");
+        Serial.print(_toHEX(length));
+        Serial.print(", ");
+        ps_byte_array_t arr = PS_BYTE_ARRAY(&data);
+        arr.print(data.size());
+        
+    };
+
+    #endif // PS_DEBUG
 } ps_frame_t;    
 
 /*!
@@ -223,16 +203,24 @@ class PacketSerial{
 public:
     
 /// @brief Instantiates a [PacketSerial] instance.
-/// @param headers_ 
-/// @param port 
+/// @param headers_ Valid headers that are placed at the start of a serial data packet.
+/// @param port The serial port that the class instance will use.
 PacketSerial(std::vector<uint16_t> headers_,
-    #if PS_USE_SOFTWARE_SERIAL
-        SoftwareSerial * port
-    #else
-        HardwareSerial * port
-    #endif
-);
-// virtual ~PacketSerial();
+            #if PS_USE_SOFTWARE_SERIAL
+                SoftwareSerial * port
+            #else
+                HardwareSerial * port
+            #endif
+            ) :
+            headers(headers_),   
+            ps_serial_port(port), 
+            rxQueue(NULL), 
+            txQueue(NULL),
+            errQueue(NULL){
+
+    };
+
+ ~PacketSerial(){};
 
 /// @brief Initializes the PacketSerial.
 virtual uint8_t begin();
@@ -292,16 +280,6 @@ virtual void onSerialTx(ps_frame_t * frame);
 /// @brief called when the [begin] method completes.
 virtual uint8_t onStartup();
 
-
-#if PS_DEBUG
-
-/// @brief Returns an address string from the [address].
-String toHEX(uint8_t address);
-
-/// @brief Prints a frame to the debug serial port.
-void printFrame(uint8_t data[], uint8_t dLen);
-
-#endif //PS_DEBUG
 
 /// @brief Call [onError] to send the error code to the errQueue.
 ///
@@ -369,5 +347,7 @@ static void serial_tx_impl(void* _this);
     uint8_t setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask);
 
 };
+
+
 
 #endif //PACKET_SERIAL

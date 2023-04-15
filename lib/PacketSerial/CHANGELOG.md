@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+## 0.0.6+1
+
+### BREAKING CHANGES
+* Added private variables for ps_config settings to allow easy configuration using `#define` statements.
 
 ## 0.0.6
 

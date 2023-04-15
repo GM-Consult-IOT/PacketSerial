@@ -192,7 +192,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
             while(uxQueueSpacesAvailable(q) < 1){
                 xQueueReceive(q, &(poppedFrame), ( TickType_t ) 10 ) ;            
             }
-            ps_err_t error = q==rxQueue?PS_ERR_RX_QUEUE_FULL : PS_ERR_TX_QUEUE_FULL;
+            ps_err_t error = q == rxQueue? PS_ERR_RX_QUEUE_FULL: PS_ERR_TX_QUEUE_FULL;
             onError(error);                                     
         } 
         xQueueSend(q, ( void * ) frame, (TickType_t ) 10 );
@@ -248,7 +248,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
 
     /// @brief Create the serial RX queue.
     ps_err_t PacketSerial::create_rx_queue(){
-        rxQueue = xQueueCreate(PS_RX_QUEUE_LENGTH, sizeof(ps_byte_array_t)); 
+        rxQueue = xQueueCreate(rx_queue_length, sizeof(ps_byte_array_t)); 
         if (rxQueue == NULL){
             onError(PS_ERR_RX_QUEUE_CREATE_FAIL);
             return PS_ERR_RX_QUEUE_CREATE_FAIL;
@@ -258,7 +258,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
 
     /// @brief Create the serial TX queue.
     ps_err_t PacketSerial::create_tx_queue(){
-        txQueue = xQueueCreate(PS_TX_QUEUE_LENGTH,sizeof(ps_byte_array_t));  // create the TX queue
+        txQueue = xQueueCreate(tx_queue_length,sizeof(ps_byte_array_t));  // create the TX queue
          if (txQueue == NULL){
             onError(PS_ERR_TX_QUEUE_CREATE_FAIL);
             return(PS_ERR_TX_QUEUE_CREATE_FAIL);
@@ -268,7 +268,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
 
         /// @brief Create the serial TX queue.
     ps_err_t PacketSerial::create_err_queue(){
-        errQueue = xQueueCreate(PS_ERR_QUEUE_LENGTH,sizeof(uint8_t));  // create the TX queue
+        errQueue = xQueueCreate(err_queue_length,sizeof(uint8_t));  // create the TX queue
          if (errQueue == NULL){
             onError(PS_ERR_ERR_QUEUE_CREATE_FAIL);
             return(PS_ERR_ERR_QUEUE_CREATE_FAIL);
@@ -289,16 +289,17 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
         static_cast<PacketSerial*>(_this)->serial_tx();
     };
     
+    /// @brief Starts the the serial RX task.
     ps_err_t PacketSerial::start_rx_task(){
         // create the RX task
         if (xTaskCreatePinnedToCore(
             this->serial_rx_impl,
             PS_RX_TASK_NAME,
-            PS_RX_STACK_SIZE,
+            stack_size,
             this,
-            PS_TASK_PRIORITY,
+            task_priority,
             NULL,
-            PS_CORE) == pdPASS){
+            core) == pdPASS){
                 return PS_PASS;
             } 
         onError(PS_ERR_RX_TASK_START_FAIL);
@@ -306,25 +307,22 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
            
     };
 
+    /// @brief Starts the serial TX task.
     ps_err_t PacketSerial::start_tx_task(){
         // create the TX task
         if(xTaskCreatePinnedToCore(
             this->serial_tx_impl,
             PS_TX_TASK_NAME,
-            PS_TX_STACK_SIZE,
+            stack_size,
             this,
-            PS_TASK_PRIORITY,
+            task_priority,
             NULL,
-            PS_CORE) == pdPASS){
+            core) == pdPASS){
             return PS_PASS; 
         };  
         onError(PS_ERR_TX_TASK_START_FAIL);
         return PS_ERR_TX_TASK_START_FAIL;
     };
-
-
-
-
 
     /// @brief Sets the bits in [oldValue] from [newValue] using the [mask].
     /// @param oldValue The byte that will be changed.

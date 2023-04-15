@@ -19,45 +19,61 @@
     #define PLATFORM_IS_ESP32 true
     #endif // PLATFORM_IS_ESP32
 
-    /// @brief The maximum length of a data packet.
     #ifndef MAX_FRAME_LENGTH
+    /// @brief The maximum length of a data packet.
     #define MAX_FRAME_LENGTH 255
     #endif // MAX_FRAME_LENGTH
 
+
+    #ifndef PS_TASK_PRIORITY
     /// @brief The priority of the serial monitor tasks.
-    const int PS_TASK_PRIORITY = 1;
+    #define PS_TASK_PRIORITY 1
+    #endif // PS_TASK_PRIORITY
 
+    #ifndef PS_STACK_SIZE
     /// @brief The stack size for the serial port RX task.
-    const int PS_RX_STACK_SIZE = 10800;
+    #define PS_STACK_SIZE 10800
+    #endif // PS_STACK_SIZE
 
-    /// @brief The stack size for the serial port TX task
-    const int PS_TX_STACK_SIZE = 10800;
-
+    #ifndef PS_RX_QUEUE_LENGTH
     /// @brief The length of the RX queue.
     /// 
     /// Increasing the queue length may require an increase in stack size. 
-    const int PS_RX_QUEUE_LENGTH = 10;
+    #define PS_RX_QUEUE_LENGTH 10
+    #endif // PS_RX_QUEUE_LENGTH
 
+    #ifndef PS_TX_QUEUE_LENGTH
     /// @brief The length of the TX queue.
     /// 
     /// Increasing the queue length may require an increase in stack size. 
-    const int PS_TX_QUEUE_LENGTH = 10;
+    #define PS_TX_QUEUE_LENGTH 10
+    #endif // PS_TX_QUEUE_LENGTH
 
+    #ifndef PS_ERR_QUEUE_LENGTH
     /// @brief The length of the ERROR queue.
     /// 
     /// Increasing the queue length may require an increase in stack size. 
-    const int PS_ERR_QUEUE_LENGTH = 255;
+    #define PS_ERR_QUEUE_LENGTH 255
+    #endif // PS_ERR_QUEUE_LENGTH
 
+    #ifndef PS_BAUD
     /// @brief The default serial port speed.
-    const int PS_BAUD = 115200;
+    #define PS_BAUD 115200
+    #endif // PS_BAUD
 
+    #ifndef PS_CORE
     /// @brief The processor core that runs the serial port processes.
-    const int PS_CORE = 1;
+    #define PS_CORE 1
+    #endif // PS_CORE
 
+    #ifndef PS_RX_TASK_NAME
     /// @brief The name of the serial port RX task.
-    const char PS_RX_TASK_NAME[] = "PS_RX_TASK";
+    #define PS_RX_TASK_NAME "PS_RX_TASK"
+    #endif // PS_RX_TASK_NAME
 
+    #ifndef PS_TX_TASK_NAME
     /// @brief The name of the serial port TX task.
-    const char PS_TX_TASK_NAME[] = "PS_TX_TASK";
+    #define PS_TX_TASK_NAME "PS_TX_TASK"
+    #endif // PS_TX_TASK_NAME
 
 #endif // PS_CONFIG

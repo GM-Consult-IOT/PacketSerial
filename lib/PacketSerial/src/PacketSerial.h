@@ -313,6 +313,10 @@ void serial_tx(void);
 /// @return true if the [header] is in the [headers] list.
 ps_err_t headerValid(ps_byte_array_t * byte_array);
 
+/// @brief Sends the frame to the rxQueue or txQueue. 
+///
+/// if the queue is full it will pop the oldest frame and push the new
+/// frame, returning an error that frames were lost.
 ps_err_t send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
 
 /// @brief Create the serial RX queue.
@@ -345,6 +349,33 @@ static void serial_tx_impl(void* _this);
 /// @return A clone of [oldValue] with only the [mask] bits changed to match
 /// [newValue].   
     uint8_t setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask);
+
+private:
+
+
+    /// @brief The priority of the serial monitor tasks.
+     uint8_t task_priority = PS_TASK_PRIORITY;
+
+    /// @brief The stack size for the serial port TX task
+     uint16_t stack_size = PS_STACK_SIZE;
+
+    /// @brief The length of the RX queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
+     uint8_t rx_queue_length = PS_RX_QUEUE_LENGTH;
+
+    /// @brief The length of the TX queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
+     uint8_t tx_queue_length = PS_TX_QUEUE_LENGTH;
+
+    /// @brief The length of the ERROR queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
+     uint8_t err_queue_length = PS_ERR_QUEUE_LENGTH;
+
+    /// @brief The processor core that runs the serial port processes.
+     uint8_t core = PS_CORE;
 
 };
 

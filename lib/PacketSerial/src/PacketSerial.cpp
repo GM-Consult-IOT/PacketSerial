@@ -46,7 +46,7 @@
     };
 
 
-    UBaseType_t  PacketSerial::available(void){
+    UBaseType_t  PacketSerial::available(void){        
         return uxQueueMessagesWaiting(rxQueue);
     };
 
@@ -186,7 +186,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     };
 
     ps_err_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
-        ps_err_t error = PS_PASS;
+        ps_err_t error = PS_PASS;        
         if (uxQueueSpacesAvailable(q) <1) {
             ps_byte_array_t poppedFrame;
             while(uxQueueSpacesAvailable(q) < 1){
@@ -223,8 +223,10 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// In debug mode the error is also printed to the serial monitor.
     /// @param error The [PS_ERR] error code as uint8_t.
     void PacketSerial::onError(uint8_t error){
+       
         if (uxQueueSpacesAvailable(errQueue) <2) {
             uint8_t poppedErr;
+           
             while(uxQueueSpacesAvailable(errQueue) < 2){
                 xQueueReceive(errQueue, &(poppedErr), ( TickType_t ) 10 ) ;  
             }
@@ -241,6 +243,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     ///         Returns 0x00 if the [errQueue] is empty.
     uint8_t PacketSerial::readError(){
         uint8_t retVal = 0x00;
+     
         xQueueReceive(errQueue, &(retVal), ( TickType_t ) 10 ) ;
         return retVal;
 
@@ -257,7 +260,7 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     };
 
     /// @brief Create the serial TX queue.
-    ps_err_t PacketSerial::create_tx_queue(){
+    ps_err_t PacketSerial::create_tx_queue(){       
         txQueue = xQueueCreate(tx_queue_length,sizeof(ps_byte_array_t));  // create the TX queue
          if (txQueue == NULL){
             onError(PS_ERR_TX_QUEUE_CREATE_FAIL);
@@ -331,12 +334,8 @@ uint8_t PacketSerial::write(ps_frame_t * frame){
     /// @return A clone of [oldValue] with only the [mask] bits changed to match
     /// [newValue].   
      uint8_t PacketSerial::setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask){
-        Serial.print(oldValue,BIN);Serial.print(" / "); Serial.print(newValue,BIN);Serial.print(" / ");Serial.println(mask,BIN);
         uint8_t retval = oldValue & ~mask;
-        Serial.print(oldValue,BIN);Serial.print(" >> "); 
-        Serial.print(retval,BIN);Serial.print(" >> ");
         retval = retval | (newValue & mask);
-        Serial.println(retval,BIN);
         return (oldValue & ~mask) | (newValue & mask);
     };
 

@@ -1,5 +1,8 @@
 <!-- PacketSerial -->
 
+## 0.0.6+2
+
+* Removed serial debug code.
 ## 0.0.6+1
 
 ### BREAKING CHANGES

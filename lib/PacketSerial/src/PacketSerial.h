@@ -27,78 +27,10 @@
  * 
 */
 
-#ifndef PACKET_SERIAL
-
-#define PACKET_SERIAL
+#ifndef PACKET_SERIAL   // HEADER GUARD, do not remove
+#define PACKET_SERIAL   // HEADER GUARD, do not remove
 
 #include "ps_config.h"
-
-
-
-
-/*!* IMPORTANT: Do not attempt to set these #define statements anywhere else in your
-* code as unexpected results are likely.
-*
-* IMPORTANT: CHANGING ANY OF THE FOLLOWING SETTINGS SHOULD NOT BE NECESSARY
-Proceed with caution
---------------------------------------------------------------
-*/
-
-    #ifndef MAX_FRAME_LENGTH
-    /// @brief The maximum length of a data packet.
-    #define MAX_FRAME_LENGTH 255
-    #endif // MAX_FRAME_LENGTH
-
-    #ifndef PS_TASK_PRIORITY
-    /// @brief The priority of the serial monitor tasks.
-    #define PS_TASK_PRIORITY 1
-    #endif // PS_TASK_PRIORITY
-
-    #ifndef PS_STACK_SIZE
-    /// @brief The stack size for the serial port RX task.
-    #define PS_STACK_SIZE 10800
-    #endif // PS_STACK_SIZE
-
-    #ifndef PS_RX_QUEUE_LENGTH
-    /// @brief The length of the RX queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-    #define PS_RX_QUEUE_LENGTH 10
-    #endif // PS_RX_QUEUE_LENGTH
-
-    #ifndef PS_TX_QUEUE_LENGTH
-    /// @brief The length of the TX queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-    #define PS_TX_QUEUE_LENGTH 10
-    #endif // PS_TX_QUEUE_LENGTH
-
-    #ifndef PS_ERR_QUEUE_LENGTH
-    /// @brief The length of the ERROR queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-    #define PS_ERR_QUEUE_LENGTH 255
-    #endif // PS_ERR_QUEUE_LENGTH
-
-    #ifndef PS_BAUD
-    /// @brief The default serial port speed.
-    #define PS_BAUD 115200
-    #endif // PS_BAUD
-
-    #ifndef PS_CORE
-    /// @brief The processor core that runs the serial port processes.
-    #define PS_CORE 1
-    #endif // PS_CORE
-
-    #ifndef PS_RX_TASK_NAME
-    /// @brief The name of the serial port RX task.
-    #define PS_RX_TASK_NAME "PS_RX_TASK"
-    #endif // PS_RX_TASK_NAME
-
-    #ifndef PS_TX_TASK_NAME
-    /// @brief The name of the serial port TX task.
-    #define PS_TX_TASK_NAME "PS_TX_TASK"
-    #endif // PS_TX_TASK_NAME
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -281,10 +213,24 @@ PacketSerial(std::vector<uint16_t> headers_,
 
     };
 
- ~PacketSerial(){};
 
-/// @brief Initializes the PacketSerial.
-virtual uint8_t begin();
+    /// @brief Initializes the PacketSerial.
+    uint8_t begin(){
+        uint8_t retVal = 0x00;
+        #if PS_DEBUG
+        retVal += create_err_queue();
+        #endif // PS_DEBUG
+        retVal += create_rx_queue();
+        retVal += create_tx_queue();
+        retVal += start_rx_task();
+        retVal += start_tx_task();
+        if (retVal > 0){
+            onError(PS_ERR_START_UP_FAIL);
+            return PS_ERR_START_UP_FAIL;
+        } else {
+            return onStartup();            
+        }
+    };
 
 /// @brief Returns true if the receive queue contains data.
 /// @return true if the receive queue contains data.
@@ -298,16 +244,20 @@ ps_frame_t read();
 
 #if PS_DEBUG   
 
-/// @brief Reads the error the [errQueue].
-/// @return Returns the next error code from the [errQueue] as ps_frame_t. 
-///         Returns 0x00 if the [errQueue] is empty.
-uint8_t readError();
+    /// @brief Reads the error the [errQueue].
+    /// @return Returns the next error code from the [errQueue] as ps_frame_t. 
+    ///         Returns 0x00 if the [errQueue] is empty.
+    uint8_t readError(){
+        uint8_t retVal = 0x00;
+     
+        xQueueReceive(errQueue, &(retVal), ( TickType_t ) 10 ) ;
+        return retVal;
+    }
 
 #endif //PS_DEBUG
 
-/// @brief Writes a 
-/// @param lenD 
-/// @param data 
+/// @brief Writes a frame to the txQueue for transmitting by the [serial_tx] task.
+/// @param frame the frame that will be transmitted.
 uint8_t write (ps_frame_t * frame);
 
 /// @brief Returns the array of valid headers used by the PacketSerial instance.
@@ -353,8 +303,23 @@ virtual uint8_t onStartup();
 ///
 /// In debug mode the error is also printed to the serial monitor.
 /// @param error The [PS_ERR] error code as uint8_t.
-void onError(uint8_t error);
-
+void onError(uint8_t error){
+#if PS_DEBUG   
+    if (uxQueueSpacesAvailable(errQueue) <2) {
+        uint8_t poppedErr;
+        
+        while(uxQueueSpacesAvailable(errQueue) < 2){
+            xQueueReceive(errQueue, &(poppedErr), ( TickType_t ) 10 ) ;  
+        }
+        uint8_t full_err = PS_ERR_ERR_QUEUE_FULL;
+        xQueueSend(errQueue, ( void * ) &full_err, (TickType_t ) 10) ;
+        xQueueSend(errQueue, ( void * ) &error, (TickType_t ) 10) ;           
+    } else {
+        xQueueSend(errQueue, ( void * ) &error, (TickType_t ) 10) ;
+    }
+#endif // PS_DEBUG
+    return;
+};
 
 /// @brief The queue containing frames received from the display.
 QueueHandle_t txQueue;
@@ -399,11 +364,11 @@ ps_err_t start_rx_task();
 /// @brief Starts the serial TX task.
 ps_err_t start_tx_task();
 
-/// @brief The task that processes with data received from the display on [serialPort].
+/// @brief The static delegate of [serial_rx].
 /// @param parameter NULL
 static void serial_rx_impl(void* _this);
 
-/// @brief The task that processes with data sent to the display on [serialPort].
+/// @brief The static delegate of [serial_tx].
 /// @param parameter NULL
 static void serial_tx_impl(void* _this);
 
@@ -417,30 +382,29 @@ static void serial_tx_impl(void* _this);
 
 private:
 
+/// @brief The priority of the serial monitor tasks.
+    uint8_t task_priority = PS_TASK_PRIORITY;
 
-    /// @brief The priority of the serial monitor tasks.
-     uint8_t task_priority = PS_TASK_PRIORITY;
+/// @brief The stack size for the serial port TX task
+    uint16_t stack_size = PS_STACK_SIZE;
 
-    /// @brief The stack size for the serial port TX task
-     uint16_t stack_size = PS_STACK_SIZE;
+/// @brief The length of the RX queue.
+/// 
+/// Increasing the queue length may require an increase in stack size. 
+    uint8_t rx_queue_length = PS_RX_QUEUE_LENGTH;
 
-    /// @brief The length of the RX queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-     uint8_t rx_queue_length = PS_RX_QUEUE_LENGTH;
+/// @brief The length of the TX queue.
+/// 
+/// Increasing the queue length may require an increase in stack size. 
+    uint8_t tx_queue_length = PS_TX_QUEUE_LENGTH;
 
-    /// @brief The length of the TX queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-     uint8_t tx_queue_length = PS_TX_QUEUE_LENGTH;
+/// @brief The length of the ERROR queue.
+/// 
+/// Increasing the queue length may require an increase in stack size. 
+    uint8_t err_queue_length = PS_ERR_QUEUE_LENGTH;
 
-    /// @brief The length of the ERROR queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-     uint8_t err_queue_length = PS_ERR_QUEUE_LENGTH;
-
-    /// @brief The processor core that runs the serial port processes.
-     uint8_t core = PS_CORE;
+/// @brief The processor core that runs the serial port processes.
+    uint8_t core = PS_CORE;
 
 };
 

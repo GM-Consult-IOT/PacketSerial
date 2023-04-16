@@ -3,7 +3,6 @@
 
 #include <PacketSerial.h>
 
-
 /// @brief The valid headers that can be sent by the device.
 static const std::vector<uint16_t> headers{0x5aa5};
 
@@ -80,10 +79,13 @@ void setup() {
   // handshake for debugging
   Serial.println("Up and running...");
 
+  uint8_t error = display.begin();
+  Serial.println("Error on startup: " + String(error,HEX));
   // initialize the display
   if (display.begin() != PS_PASS){
-    uint8_t error = 0xff;
+    // uint8_t error = 0xff;
 
+    #if PS_DEBUG
     // The [begin] method returns PS_PASS (0x00) if it completes successfully.
     while (error != PS_PASS){
 
@@ -91,6 +93,7 @@ void setup() {
       error = display.readError();
       Serial.print("The error code is "); Serial.println(error, HEX);
     }
+    #endif
 
   } else {
       // set the flag
@@ -113,6 +116,7 @@ void loop() {
   
   uint8_t error = 0xff;                 // placeholder for errors
 
+  #if PS_DEBUG
   /* Read errors from display regularly or the error queue will fill up, 
   /* causing error codes to be popped off the buffer. */
   while (error != PS_PASS){             
@@ -123,6 +127,7 @@ void loop() {
       Serial.println("] was thrown.");
     }
   }
+  #endif
   /* Check for data from display regularly or the RX queue will fill up, 
   /* causing frames to be lost. The default queue is only 5 frames.*/
   

@@ -1,8 +1,10 @@
+/*! IMPORTANT: Configuration settings should only be set in this file. 
+* Attempting to override the settings in your main.cpp is likely to lead 
+* to unexpected errors or failure to compile.
+*/
 
-
-#ifndef PS_CONFIG
-
-#define PS_CONFIG
+#ifndef __PS_CONFIG__   // HEADER GUARD, do not remove
+#define __PS_CONFIG__   // HEADER GUARD, do not remove
 
     #ifndef PS_DEBUG
     /// @brief Set to true to enable printing of debug information to Serial.
@@ -19,11 +21,16 @@
     #define PLATFORM_IS_ESP32 true
     #endif // PLATFORM_IS_ESP32
 
+/*! IMPORTANT: CHANGING ANY OF THE FOLLOWING SETTINGS SHOULD 
+* NOT BE NECESSARY
+* Proceed with caution
+--------------------------------------------------------------
+*/
+
     #ifndef MAX_FRAME_LENGTH
     /// @brief The maximum length of a data packet.
     #define MAX_FRAME_LENGTH 255
     #endif // MAX_FRAME_LENGTH
-
 
     #ifndef PS_TASK_PRIORITY
     /// @brief The priority of the serial monitor tasks.
@@ -76,4 +83,4 @@
     #define PS_TX_TASK_NAME "PS_TX_TASK"
     #endif // PS_TX_TASK_NAME
 
-#endif // PS_CONFIG
+    #endif

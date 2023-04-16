@@ -293,8 +293,8 @@ ps_err_t PacketSerial::start_tx_task(){
 /// @return A clone of [oldValue] with only the [mask] bits changed to match
 /// [newValue].   
     uint8_t PacketSerial::setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask){
-    uint8_t retval = oldValue & ~mask;
-    retval = retval | (newValue & mask);
+    // uint8_t retval = oldValue & ~mask;
+    // retval = retval | (newValue & mask);
     return (oldValue & ~mask) | (newValue & mask);
 };
 

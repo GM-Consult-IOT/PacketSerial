@@ -10,6 +10,11 @@
 * An Arduino C++ library for interfacing with serial devices that communicate with
 * data packets that start with a header word and length byte.
 * 
+* IMPORTANT:
+* Configuration settings should be set directly in the /src/ps_config.h file. 
+* Attempting to override the settings in your main.cpp is likely to lead to unexpected
+* errors or failure to compile.
+* 
 * @section author Author
 * 
 * Gerhard Malan for GM Consult Pty Ltd
@@ -27,6 +32,73 @@
 #define PACKET_SERIAL
 
 #include "ps_config.h"
+
+
+
+
+/*!* IMPORTANT: Do not attempt to set these #define statements anywhere else in your
+* code as unexpected results are likely.
+*
+* IMPORTANT: CHANGING ANY OF THE FOLLOWING SETTINGS SHOULD NOT BE NECESSARY
+Proceed with caution
+--------------------------------------------------------------
+*/
+
+    #ifndef MAX_FRAME_LENGTH
+    /// @brief The maximum length of a data packet.
+    #define MAX_FRAME_LENGTH 255
+    #endif // MAX_FRAME_LENGTH
+
+    #ifndef PS_TASK_PRIORITY
+    /// @brief The priority of the serial monitor tasks.
+    #define PS_TASK_PRIORITY 1
+    #endif // PS_TASK_PRIORITY
+
+    #ifndef PS_STACK_SIZE
+    /// @brief The stack size for the serial port RX task.
+    #define PS_STACK_SIZE 10800
+    #endif // PS_STACK_SIZE
+
+    #ifndef PS_RX_QUEUE_LENGTH
+    /// @brief The length of the RX queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
+    #define PS_RX_QUEUE_LENGTH 10
+    #endif // PS_RX_QUEUE_LENGTH
+
+    #ifndef PS_TX_QUEUE_LENGTH
+    /// @brief The length of the TX queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
+    #define PS_TX_QUEUE_LENGTH 10
+    #endif // PS_TX_QUEUE_LENGTH
+
+    #ifndef PS_ERR_QUEUE_LENGTH
+    /// @brief The length of the ERROR queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
+    #define PS_ERR_QUEUE_LENGTH 255
+    #endif // PS_ERR_QUEUE_LENGTH
+
+    #ifndef PS_BAUD
+    /// @brief The default serial port speed.
+    #define PS_BAUD 115200
+    #endif // PS_BAUD
+
+    #ifndef PS_CORE
+    /// @brief The processor core that runs the serial port processes.
+    #define PS_CORE 1
+    #endif // PS_CORE
+
+    #ifndef PS_RX_TASK_NAME
+    /// @brief The name of the serial port RX task.
+    #define PS_RX_TASK_NAME "PS_RX_TASK"
+    #endif // PS_RX_TASK_NAME
+
+    #ifndef PS_TX_TASK_NAME
+    /// @brief The name of the serial port TX task.
+    #define PS_TX_TASK_NAME "PS_TX_TASK"
+    #endif // PS_TX_TASK_NAME
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -49,9 +121,6 @@
     #include <SoftwareSerial.h>             // featherfly/SoftwareSerial@^1.0
 #else
     #include <HardwareSerial.h>
-    // #define PS_HWS_RX_GPIO 16               // The RX GPIO.
-    // #define PS_HWS_TX_GPIO 17               // The TX GPIO.
-    // #define PS_HWS_INVERT_LOGIC false       // Invert the pin logic to active high.
 #endif // PS_USE_SOFTWARE_SERIAL
 
 
@@ -65,14 +134,6 @@ typedef uint8_t ps_length_t;
 
 /// @brief The first two characters of a frame.
 typedef uint16_t ps_header_t;
-
-
-#if PS_DEBUG
-
-
-
-#endif // PS_DEBUG
-
 
 /// @brief Serial data frame consisting of up to 256 bytes.
 ///
@@ -234,10 +295,15 @@ UBaseType_t available(void);
 ///         Returns an empty frame if the buffer is empty.
 ps_frame_t read();
 
+
+#if PS_DEBUG   
+
 /// @brief Reads the error the [errQueue].
 /// @return Returns the next error code from the [errQueue] as ps_frame_t. 
 ///         Returns 0x00 if the [errQueue] is empty.
 uint8_t readError();
+
+#endif //PS_DEBUG
 
 /// @brief Writes a 
 /// @param lenD 
@@ -279,7 +345,6 @@ virtual void onSerialTx(ps_frame_t * frame);
 
 /// @brief called when the [begin] method completes.
 virtual uint8_t onStartup();
-
 
 /// @brief Call [onError] to send the error code to the errQueue.
 ///

@@ -152,6 +152,9 @@ typedef struct PS_FRAME{
 
     PS_FRAME(){};
 
+    PS_FRAME(ps_header_t header_, std::vector<uint8_t> data_):
+    header(header_),length(data_.size()),data(data_) {};
+
     PS_FRAME(ps_header_t header_,  ps_length_t length_, std::vector<uint8_t> data_):
         header(header_),length(length_),data(data_) {};
 

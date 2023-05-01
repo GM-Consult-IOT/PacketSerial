@@ -114,6 +114,9 @@ ps_err_t PacketSerial::headerValid(ps_byte_array_t * byte_array){
     }      
     if (!isValid){    
         onError(PS_ERR_INVALID_HEADER); 
+        // byte_array->print();
+        Serial.println("Invalid Header: " + String(header,HEX));
+
     }
     return isValid? PS_PASS : PS_ERR_INVALID_HEADER;
 };

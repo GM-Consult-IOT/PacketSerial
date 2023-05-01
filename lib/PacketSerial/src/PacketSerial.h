@@ -222,11 +222,14 @@ PacketSerial(std::vector<uint16_t> headers_,
         uint8_t retVal = 0x00;
         #if PS_DEBUG
         retVal += create_err_queue();
+        Serial.println("PacketSerial.begin()");
         #endif // PS_DEBUG
         retVal += create_rx_queue();
         retVal += create_tx_queue();
         retVal += start_rx_task();
         retVal += start_tx_task();
+        
+        Serial.println("PacketSerial.begin() DONE: "+ String(retVal, HEX));
         if (retVal > 0){
             onError(PS_ERR_START_UP_FAIL);
             return PS_ERR_START_UP_FAIL;

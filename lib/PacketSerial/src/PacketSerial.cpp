@@ -38,7 +38,6 @@ UBaseType_t  PacketSerial::available(void){
 /// @brief Reads the next frame from the [rxQueue].
 /// @return Returns the next frame from the [rxQueue] as ps_frame_t. 
 /// Returns an empty frame if the buffer is empty.
-ps_frame_t read();
 ps_frame_t PacketSerial::read(){
         ps_frame_t msg;
     if (uxQueueMessagesWaiting(rxQueue)>0){
@@ -73,7 +72,6 @@ ps_err_t PacketSerial::create_err_queue(){
     return PS_PASS;
 };
 
-
 /// @brief  Sends a data frame to the display.    
 /// @param command The command to be used.
 /// @param address The starting address of the data
@@ -102,7 +100,6 @@ void PacketSerial:: serial_tx(void ){
 /// @param frame The frame reveived from the display.
 void PacketSerial:: onSerialTx(ps_frame_t * frame){};
 
-
 /// @brief  Returns true if the [header] is in the [headers] list.
 /// @param header The header to validate.
 /// @return true if the [header] is in the [headers] list.
@@ -114,9 +111,6 @@ ps_err_t PacketSerial::headerValid(ps_byte_array_t * byte_array){
     }      
     if (!isValid){    
         onError(PS_ERR_INVALID_HEADER); 
-        // byte_array->print();
-        Serial.println("Invalid Header: " + String(header,HEX));
-
     }
     return isValid? PS_PASS : PS_ERR_INVALID_HEADER;
 };

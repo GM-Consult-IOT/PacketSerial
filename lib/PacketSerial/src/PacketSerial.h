@@ -375,7 +375,7 @@ ps_err_t start_tx_task();
 static void serial_rx_impl(void* _this);
 
 /// @brief The static delegate of [serial_tx].
-/// @param parameter NULL
+/// @param _this NULL
 static void serial_tx_impl(void* _this);
 
 /// @brief Sets the bits in [oldValue] from [newValue] using the [mask].

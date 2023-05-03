@@ -1,6 +1,10 @@
 <!-- PacketSerial -->
 
 ## 0.0.6+3
+
+* Bug fixes.
+
+## 0.0.6+3
 ### BREAKING CHANGES
 * Moved all configuration data to `ps_config.h`.
 

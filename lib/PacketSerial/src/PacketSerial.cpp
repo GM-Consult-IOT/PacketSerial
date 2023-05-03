@@ -110,7 +110,12 @@ ps_err_t PacketSerial::headerValid(ps_byte_array_t * byte_array){
         isValid = isValid || (t == header);      // element can not be changed
     }      
     if (!isValid){    
-        onError(PS_ERR_INVALID_HEADER); 
+        onError(PS_ERR_INVALID_HEADER);
+        #if PS_DEBUG         
+        Serial.print("Invalid header in packet {");
+        byte_array->print(8);
+        Serial.println("....}");
+        #endif // PS_DEBUG
     }
     return isValid? PS_PASS : PS_ERR_INVALID_HEADER;
 };

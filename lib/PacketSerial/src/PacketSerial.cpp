@@ -187,8 +187,8 @@ void PacketSerial::serial_rx(void){
         ticks++;
         // Serial.println("Ticks: " + String(ticks));
         if (ticks > 100 && bc > 2){
-            ps_header_t header = ((frame.data[0]) << 8) | frame.data[1];
-            if (headerValid(header) == PS_PASS){
+            // ps_header_t header = ((frame.data[0]) << 8) | frame.data[1];
+            if (headerValid(frame.header()) == PS_PASS){
                 // ps_frame_t frm = PS_FRAME(&frame);
                 
                 // Serial.println("Ticks: " + String(ticks));
@@ -199,7 +199,7 @@ void PacketSerial::serial_rx(void){
                 memset(frame.data,0, sizeof(frame.data));
                 ticks = 0;
             } else {
-                Serial.println("Header: 0x" + String(header, HEX));
+                Serial.println("Header: 0x" + String(frame.header(), HEX));
             }
         }
     }
@@ -211,8 +211,8 @@ void PacketSerial::serial_rx(void){
 /// frame, returning an error that frames were lost.
 uint8_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
     uint8_t error = PS_PASS;
-    ps_header_t header = ((frame->data[0]) << 8) | frame->data[1];  
-    error = error + headerValid(header);      
+    // ps_header_t header = ((frame->data[0]) << 8) | frame->data[1];  
+    error = error + headerValid(frame->header());      
     if (uxQueueSpacesAvailable(q) <1 && error  == PS_PASS) {
         ps_byte_array_t poppedFrame;
         while(uxQueueSpacesAvailable(q) < 1){

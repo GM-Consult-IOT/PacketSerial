@@ -77,6 +77,10 @@ typedef struct PS_BYTE_ARRAY{
 
     /// @brief The number of data characters used.
     uint8_t length;
+
+    ps_header_t header(){
+        return data[0]<<8 | data[1];
+    };
     
     PS_BYTE_ARRAY(){};
 

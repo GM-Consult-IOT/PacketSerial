@@ -1,5 +1,8 @@
 <!-- PacketSerial -->
 
+## 0.0.7+1
+* Added `ps_header_t header()` method to `PS_BYTE_ARRAY` struct.
+
 ## 0.0.7
 ### BREAKING CHANGES
 * Removed struct `PS_FRAME`.

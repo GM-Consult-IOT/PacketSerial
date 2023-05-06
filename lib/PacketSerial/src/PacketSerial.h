@@ -78,6 +78,8 @@ typedef struct PS_BYTE_ARRAY{
     /// @brief The number of data characters used.
     uint8_t length;
 
+    /// @brief Returns a 16-bit word from the first two bytes in [data].
+    /// @return A 16-bit word from the first two bytes in [data].
     ps_header_t header(){
         return data[0]<<8 | data[1];
     };

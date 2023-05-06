@@ -212,16 +212,18 @@ void PacketSerial::serial_rx(void){
 uint8_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
     uint8_t error = PS_PASS;
     // ps_header_t header = ((frame->data[0]) << 8) | frame->data[1];  
-    error = error + headerValid(frame->header());      
-    if (uxQueueSpacesAvailable(q) <1 && error  == PS_PASS) {
-        ps_byte_array_t poppedFrame;
-        while(uxQueueSpacesAvailable(q) < 1){
-            xQueueReceive(q, &(poppedFrame), ( TickType_t ) 10 ) ;            
-        }
-        ps_err_t error = q == rxQueue? PS_ERR_RX_QUEUE_FULL: PS_ERR_TX_QUEUE_FULL;
-        onError(error);                                     
-    } 
-    xQueueSend(q, ( void * ) frame, (TickType_t ) 10 );
+    error = error + headerValid(frame->header());
+    if (error == PS_PASS){      
+        if (uxQueueSpacesAvailable(q) <1) {
+            ps_byte_array_t poppedFrame;
+            while(uxQueueSpacesAvailable(q) < 1){
+                xQueueReceive(q, &(poppedFrame), ( TickType_t ) 10 ) ;            
+            }
+            ps_err_t error = q == rxQueue? PS_ERR_RX_QUEUE_FULL: PS_ERR_TX_QUEUE_FULL;
+            onError(error);                                     
+        } 
+        xQueueSend(q, ( void * ) frame, (TickType_t ) 10 );
+    }
     return error;
 };
 

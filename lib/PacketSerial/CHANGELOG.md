@@ -1,5 +1,10 @@
 <!-- PacketSerial -->
 
+## 0.0.7
+### BREAKING CHANGES
+* Removed struct `PS_FRAME`.
+* Changed state machine in `serial_rx`.
+
 ## 0.0.6+3
 
 * Bug fixes.

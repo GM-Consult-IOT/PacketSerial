@@ -38,28 +38,26 @@ UBaseType_t  PacketSerial::available(void){
 /// @brief Reads the next frame from the [rxQueue].
 /// @return Returns the next frame from the [rxQueue] as ps_frame_t. 
 /// Returns an empty frame if the buffer is empty.
-ps_frame_t PacketSerial::read(){
-        ps_frame_t msg;
-    if (uxQueueMessagesWaiting(rxQueue)>0){
+ps_byte_array_t PacketSerial::read(){
         ps_byte_array_t frame;
-        if(xQueueReceive(rxQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){               
-            msg = PS_FRAME(&frame);
+    if (uxQueueMessagesWaiting(rxQueue)>0){
+        if(xQueueReceive(rxQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){    
         }
     } 
-    return msg;       
+    return frame;       
 };
 
 /// @brief Writes a frame to the txQueue for transmitting by the [serialTx] task.
 /// @param frame the frame that will be transmitted.    
-uint8_t PacketSerial::write(ps_frame_t * frame){    
-    ps_byte_array_t packet;
-    packet.data[0] = highByte(frame->header);
-    packet.data[1] = lowByte(frame->header);
-    packet.data[2] = frame->length;
-    for (uint8_t i = 0; i <frame->length; i++){
-        packet.data[i+3] = frame->data[i];
-    }
-    return send_to_frame_queue(txQueue, &packet);
+uint8_t PacketSerial::write(ps_byte_array_t * frame){    
+    // ps_byte_array_t packet;
+    // packet.data[0] = highByte(frame->header);
+    // packet.data[1] = lowByte(frame->header);
+    // packet.data[2] = frame->length;
+    // for (uint8_t i = 0; i < frame->length; i++){
+    //     packet.data[i] = frame->data[i];
+    // }
+    return send_to_frame_queue(txQueue, frame);
 };
 
 /// @brief Create the serial TX queue.
@@ -81,8 +79,8 @@ void PacketSerial:: serial_tx(void ){
         vTaskDelay(100/portTICK_RATE_MS);
             ps_byte_array_t frame;
             if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){
-                ps_frame_t frm = PS_FRAME(&frame);      
-                onSerialTx(&(frm));        
+                // ps_frame_t frm = PS_FRAME(&frame);      
+                onSerialTx(&frame);        
                 ps_length_t lenD = frame.data[2];
                 std::vector<uint8_t> v;                    
                 v.insert(v.end(), &frame.data[0], &frame.data[lenD+3]);
@@ -98,25 +96,25 @@ void PacketSerial:: serial_tx(void ){
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame reveived from the display.
-void PacketSerial:: onSerialTx(ps_frame_t * frame){};
+void PacketSerial:: onSerialTx(ps_byte_array_t * frame){};
 
 /// @brief  Returns true if the [header] is in the [headers] list.
 /// @param header The header to validate.
 /// @return true if the [header] is in the [headers] list.
-ps_err_t PacketSerial::headerValid(ps_byte_array_t * byte_array){
+ps_err_t PacketSerial::headerValid(ps_header_t header){
     bool isValid = false;
-    ps_header_t header = ((byte_array->data[0]) << 8) | byte_array->data[1];
+    
     for (const auto& t : headers) { // reference avoids copying element
         isValid = isValid || (t == header);      // element can not be changed
     }      
-    if (!isValid){    
-        onError(PS_ERR_INVALID_HEADER);
-        #if PS_DEBUG         
-        Serial.print("Invalid header in packet {");
-        byte_array->print(8);
-        Serial.println("....}");
-        #endif // PS_DEBUG
-    }
+    // if (!isValid){    
+    //     onError(PS_ERR_INVALID_HEADER);
+    //     // #if PS_DEBUG         
+    //     // Serial.print("Invalid header in packet {");
+    //     // // byte_array->print(8);
+    //     // Serial.println("....}");
+    //     #endif // PS_DEBUG
+    // }
     return isValid? PS_PASS : PS_ERR_INVALID_HEADER;
 };
 
@@ -133,56 +131,76 @@ ps_err_t PacketSerial::headerValid(ps_byte_array_t * byte_array){
 ///   Sends frame to the rxQueue and also calls [onSerialRx], passing the frame. 
 ///   Reinitializes the frame and resets bc = 0.
 void PacketSerial::serial_rx(void){
+    Serial.println("serial_rx(void)");
     ps_length_t length;        
     ps_byte_array_t frame;           // the frame being received
     memset(frame.data,0, sizeof(frame.data));
     uint8_t bc;                 // byte counter
-    uint8_t maxBytes = 0xff;
-    ps_length_t lenF;
+    uint32_t ticks = 0;
     for(;;){
-        vTaskDelay(10/portTICK_PERIOD_MS);
-        if (ps_serial_port->available()){                
-                while (ps_serial_port->available()>0){
-                uint8_t d = (uint8_t)ps_serial_port->read();
-                switch (bc){
-                    case 0:                            
-                            frame.data[bc]=d;
-                            bc++;                           
-                    break;
-                    case 1:
-                        frame.data[bc] = d;
-                        bc++;
-                        if (!headerValid(&frame) == PS_PASS){
-                            memset(frame.data,0, sizeof(frame.data));
-                            bc = 0;                           
-                        }
-                    break;
-                    case 2:
-                        frame.data[bc] = d;
-                            bc++;
-                            lenF = d;
-                            maxBytes = 3 + d;
-                    break;
-                    default:
-                        if(bc < maxBytes){
-                            frame.data[bc]=d;
-                                bc++;
-                                lenF--;
-                        }
-                    break;
-                }
-                    if (bc > maxBytes -1 && headerValid(&frame) == PS_PASS){
-                    ps_frame_t frm = PS_FRAME(&frame);
-                    onSerialRx(&frm);
-                    send_to_frame_queue(rxQueue, &frame);
-                    bc = 0;
-                    lenF = 0;
-                    maxBytes = 0xff;
-                    memset(frame.data,0, sizeof(frame.data));
-
-                    }
+        while (ps_serial_port->available()>0){
+            ps_header_t header;
+            ticks = 0;                
+            uint8_t d = (uint8_t)ps_serial_port->read();            
+            if (bc>0){
+                header = ((frame.data[bc-1]) << 8) | d;
             }
-
+            // Serial.println("Character: 0x" + String(d, HEX));
+            // Serial.println("Header: 0x" + String(header, HEX));
+            switch (bc){
+            case 0: // first character, do nothing
+                // Serial.println ("case 0");
+                break;
+            case 1: // second character - if not a valid header, reset byte counter and frame  
+                // Serial.println ("case 1");         
+                if (!headerValid(header) == PS_PASS){
+                    memset(frame.data,0, sizeof(frame.data));
+                    bc = 0;                           
+                }
+                break;                          
+            default: //third or higher character - if a new header was received, send the previous packet
+                // Serial.println ("case else");
+                if (headerValid(header) == PS_PASS ){
+                    // frame.data[bc] = d;
+                    frame.length = bc - 1;
+                    // ps_frame_t frm = PS_FRAME(&frame);
+                    onSerialRx(&frame);
+                    send_to_frame_queue(rxQueue, &frame);
+                    uint8_t first = (frame.data[bc-1]);
+                    bc = 1;
+                    memset(frame.data,0, sizeof(frame.data));
+                    frame.data[0]= first;
+                }                    
+            }
+            // break;
+            frame.data[bc] = d;
+            bc++;
+            // Serial.println("Incremented bc: "+ String(bc));
+            frame.length = bc;
+            // if (bc>0){
+            //     Serial.print("Frame: { ");
+            //     frame.print();
+            //     Serial.println(" }");
+            //     }
+        }    
+        vTaskDelay(1/portTICK_PERIOD_MS);    
+        ticks++;
+        // Serial.println("Ticks: " + String(ticks));
+        if (ticks > 100 && bc > 2){
+            ps_header_t header = ((frame.data[0]) << 8) | frame.data[1];
+            if (headerValid(header) == PS_PASS){
+                // ps_frame_t frm = PS_FRAME(&frame);
+                
+                // Serial.println("Ticks: " + String(ticks));
+                // Serial.println("Header: " + String(header, HEX));
+                onSerialRx(&frame);
+                send_to_frame_queue(rxQueue, &frame);
+                bc = 0;
+                memset(frame.data,0, sizeof(frame.data));
+                ticks = 0;
+            } else {
+                Serial.println("Header: 0x" + String(header, HEX));
+            }
         }
     }
 };
@@ -191,9 +209,11 @@ void PacketSerial::serial_rx(void){
 ///
 /// if the queue is full it will pop the oldest frame and push the new
 /// frame, returning an error that frames were lost.
-ps_err_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
-    ps_err_t error = PS_PASS;        
-    if (uxQueueSpacesAvailable(q) <1) {
+uint8_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
+    uint8_t error = PS_PASS;
+    ps_header_t header = ((frame->data[0]) << 8) | frame->data[1];  
+    error = error + headerValid(header);      
+    if (uxQueueSpacesAvailable(q) <1 && error  == PS_PASS) {
         ps_byte_array_t poppedFrame;
         while(uxQueueSpacesAvailable(q) < 1){
             xQueueReceive(q, &(poppedFrame), ( TickType_t ) 10 ) ;            
@@ -212,7 +232,7 @@ ps_err_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * fr
 /// (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame reveived from the display.
-uint8_t PacketSerial::onSerialRx(ps_frame_t * frame){
+uint8_t PacketSerial::onSerialRx(ps_byte_array_t * frame){
     return PS_PASS; 
 };
 

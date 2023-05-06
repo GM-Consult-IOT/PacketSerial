@@ -72,23 +72,34 @@ typedef uint16_t ps_header_t;
 /// A frame always starts with a header (two characters) followed
 /// by a character that specifies the number of data bits to follow.
 typedef struct PS_BYTE_ARRAY{
+
     uint8_t data[MAX_FRAME_LENGTH];
+
+    /// @brief The number of data characters used.
+    uint8_t length;
     
     PS_BYTE_ARRAY(){};
 
-    PS_BYTE_ARRAY(std::vector<uint8_t> * v){
-        for (uint8_t i = 0; i < v->size(); i++){
-            data[i] = v->data()[i];
+    PS_BYTE_ARRAY(uint8_t length_, uint8_t * data_){        
+        // Serial.println("Header: 0x" + String(header_, HEX));
+        length = length_;
+        // data[0] = (header_ >> 8) & 0xff;        
+        // // Serial.println("data[0]: 0x" + String(data[0], HEX));
+        // data[1] = header_ & 0xff;        
+        // Serial.println("data[1]: 0x" + String(data[1], HEX));
+        for (uint8_t i = 0; i < length_; i++){
+            data[i] = data_[i];
         }
+
     }
 
     #if PS_DEBUG
-    void print(uint8_t dLen = MAX_FRAME_LENGTH){
-        for (uint8_t i = 0; i < dLen; i++){
+    void print(){
+        for (uint8_t i = 0; i < length; i++){
         if (i>0){ 
             Serial.print(", ");  
         }
-        Serial.print(data[i] > 16? 
+        Serial.print(data[i] > 0x0f? 
             "0x" + String(data[i], HEX): 
             "0x0" + String(data[i], HEX));
         }
@@ -138,57 +149,71 @@ typedef enum PS_ERR{
 } ps_err_t;
 
 
-/// @brief A datapacket exchanged with the display via serial communication.
-/// If [header] is 0x0000 then the packet is considered empty/null.
-typedef struct PS_FRAME{
+// /// @brief A datapacket exchanged with the display via serial communication.
+// /// If [header] is 0x0000 then the packet is considered empty/null.
+// typedef struct PS_FRAME{
 
-    ps_header_t header;
+//     /// @brief The first two bytes of the data packet as 16 bit word.
+//     ps_header_t header;
 
-    /// @brief  The number of words (bytes) after the byte count uint16_t.
-    ps_length_t length;
+//     /// @brief  The number of characters (bytes) after the header.
+//     /// This is equal to data.size().
+//     ps_length_t length;
 
-    /// @brief The frame data as a uint8_t-array.
-    std::vector<uint8_t> data;
+//     /// @brief The frame data as a uint8_t vector, excluding the header.
+//     std::vector<uint8_t> data;
 
-    PS_FRAME(){};
+//     /// @brief Default constructor.
+//     PS_FRAME(){};
 
-    PS_FRAME(ps_header_t header_, std::vector<uint8_t> data_):
-    header(header_),length(data_.size()),data(data_) {};
+//     /// @brief Instantiates a PS_FRAME from the header and frame.
+//     PS_FRAME(ps_header_t header_, std::vector<uint8_t> data_):
+//     header(header_),length(data_.size()),data(data_) {};
 
-    PS_FRAME(ps_header_t header_,  ps_length_t length_, std::vector<uint8_t> data_):
-        header(header_),length(length_),data(data_) {};
+//     /// @brief Instantiates a PS_FRAME from the header, length and data.
+//     /// @param header_ The first two bytes of the data packet as 16 bit word.
+//     /// @param length_ The number of characters (bytes) after the header.
+//     /// @param data_ The frame data as a uint8_t-array, excluding the header.
+//     PS_FRAME(ps_header_t header_,  ps_length_t length_, std::vector<uint8_t> data_):
+//         header(header_),length(length_),data(data_) {};
 
-    PS_FRAME(ps_byte_array_t * frame){
-        header = ((frame->data[0]) << 8) | frame->data[1];
-                length = frame->data[2];
-                for (uint8_t i = 3; i<3+length; i++){
-                    data.push_back(frame->data[i]);
-                };
-    };
+//     /// @brief Instantiates a PS_FRAME from the data packet
+//     /// @param packet The byte-array received.
+//     /// @param packetLength The total number of characters in the packet, including the header.
+//     PS_FRAME(ps_byte_array_t * packet){
+//         header = ((packet->data[0]) << 8) | packet->data[1];
+//                 length = packet->length - 2;
+//                 data.insert(data.begin(),packet->data[2],packet->data[packet->length]);
+//     };
 
-    #if PS_DEBUG
+//     #if PS_DEBUG
 
-    String _toHEX(uint8_t b){
-        return b > 16? 
-            "0x" + String(b, HEX): 
-            "0x0" + String(b, HEX);
-            };
+//     String _toHEX(uint8_t b){
+//         return b > 16? 
+//             "0x" + String(b, HEX): 
+//             "0x0" + String(b, HEX);
+//             };
 
-    /// @brief Prints the frame all on one line with commas between the bytes.
-    void print(){       
-        Serial.print(_toHEX(highByte(header)));
-        Serial.print(", ");
-        Serial.print(_toHEX(lowByte(header)));
-        Serial.print(", ");
-        Serial.print(_toHEX(length));
-        Serial.print(", ");
-        ps_byte_array_t arr = PS_BYTE_ARRAY(&data);
-        arr.print(data.size());
-        
-    };
+//     /// @brief Prints the frame all on one line with commas between the bytes.
+//     void print(){       
+//         Serial.print(_toHEX(highByte(header)));
+//         Serial.print(", ");
+//         Serial.print(_toHEX(lowByte(header)));
+//         Serial.print(", ");
+//         Serial.print(_toHEX(length));
+//         Serial.print(", ");
+//        for (uint8_t i = 0; i < data.size(); i++){
+//         if (i>0){ 
+//             Serial.print(", ");  
+//         }
+//         Serial.print(data[i] > 16? 
+//             "0x" + String(data[i], HEX): 
+//             "0x0" + String(data[i], HEX));
+//         }
+//     };
 
-    #endif // PS_DEBUG
-} ps_frame_t;    
+//     #endif // PS_DEBUG
+// } ps_frame_t;    
 
 /*!
 * @brief Serial communication wrapper for interfacing with serial devices 
@@ -242,7 +267,7 @@ UBaseType_t available(void);
 /// @brief Reads the next frame from the [rxQueue].
 /// @return Returns the next frame from the [rxQueue] as ps_frame_t. 
 ///         Returns an empty frame if the buffer is empty.
-ps_frame_t read();
+ps_byte_array_t read();
 
 
 #if PS_DEBUG   
@@ -261,7 +286,7 @@ ps_frame_t read();
 
 /// @brief Writes a frame to the txQueue for transmitting by the [serial_tx] task.
 /// @param frame the frame that will be transmitted.
-uint8_t write (ps_frame_t * frame);
+uint8_t write (ps_byte_array_t * frame);
 
 /// @brief Returns the array of valid headers used by the PacketSerial instance.
 /// @return The array of valid headers used by the PacketSerial instance.
@@ -276,7 +301,7 @@ protected:
 #endif // PS_USE_SOFTWARE_SERIAL
 
 /// @brief The valid headers used by the PacketSerial instance.
-std::vector<uint16_t> headers;
+std::vector<ps_header_t> headers;
 
 /// @brief Called whenever a new frame is received from the serial port.
 ///
@@ -285,7 +310,7 @@ std::vector<uint16_t> headers;
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame reveived from the display.
-virtual uint8_t onSerialRx(ps_frame_t * frame);
+virtual uint8_t onSerialRx(ps_byte_array_t * frame);
 
 /// @brief Called whenever a new frame is transmitted to the serial port.
 ///
@@ -294,7 +319,7 @@ virtual uint8_t onSerialRx(ps_frame_t * frame);
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame sent to the display.
-virtual void onSerialTx(ps_frame_t * frame);
+virtual void onSerialTx(ps_byte_array_t * frame);
 
 /// @brief called when the [begin] method completes.
 virtual uint8_t onStartup();
@@ -344,13 +369,13 @@ void serial_tx(void);
 /// @brief  Returns true if the [header] is in the [headers] list.
 /// @param header The header to validate.
 /// @return true if the [header] is in the [headers] list.
-ps_err_t headerValid(ps_byte_array_t * byte_array);
+ps_err_t headerValid(ps_header_t header);
 
 /// @brief Sends the frame to the rxQueue or txQueue. 
 ///
 /// if the queue is full it will pop the oldest frame and push the new
 /// frame, returning an error that frames were lost.
-ps_err_t send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
+uint8_t send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
 
 /// @brief Create the serial RX queue.
 ps_err_t create_rx_queue();

@@ -50,13 +50,8 @@ ps_byte_array_t PacketSerial::read(){
 /// @brief Writes a frame to the txQueue for transmitting by the [serialTx] task.
 /// @param frame the frame that will be transmitted.    
 uint8_t PacketSerial::write(ps_byte_array_t * frame){    
-    // ps_byte_array_t packet;
-    // packet.data[0] = highByte(frame->header);
-    // packet.data[1] = lowByte(frame->header);
-    // packet.data[2] = frame->length;
-    // for (uint8_t i = 0; i < frame->length; i++){
-    //     packet.data[i] = frame->data[i];
-    // }
+    // frame->print();
+    // Serial.println();
     return send_to_frame_queue(txQueue, frame);
 };
 
@@ -76,7 +71,7 @@ ps_err_t PacketSerial::create_err_queue(){
 /// @param data The uint8_t-array to be appended, to the frame
 void PacketSerial:: serial_tx(void ){
     for(;;){
-        vTaskDelay(100/portTICK_RATE_MS);
+        // vTaskDelay(100/portTICK_RATE_MS);
             ps_byte_array_t frame;
             if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){
                 // ps_frame_t frm = PS_FRAME(&frame);      
@@ -131,7 +126,7 @@ ps_err_t PacketSerial::headerValid(ps_header_t header){
 ///   Sends frame to the rxQueue and also calls [onSerialRx], passing the frame. 
 ///   Reinitializes the frame and resets bc = 0.
 void PacketSerial::serial_rx(void){
-    Serial.println("serial_rx(void)");
+    // Serial.println("serial_rx(void)");
     ps_length_t length;        
     ps_byte_array_t frame;           // the frame being received
     memset(frame.data,0, sizeof(frame.data));
@@ -211,7 +206,6 @@ void PacketSerial::serial_rx(void){
 /// frame, returning an error that frames were lost.
 uint8_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
     uint8_t error = PS_PASS;
-    // ps_header_t header = ((frame->data[0]) << 8) | frame->data[1];  
     error = error + headerValid(frame->header());
     if (error == PS_PASS){      
         if (uxQueueSpacesAvailable(q) <1) {

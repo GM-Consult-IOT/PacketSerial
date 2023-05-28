@@ -202,7 +202,7 @@ void PacketSerial::serial_rx(void){
 
 /// @brief Sends the frame to the rxQueue or txQueue. 
 ///
-/// if the queue is full it will pop the oldest frame and push the new
+/// If the queue is full it will pop the oldest frame and push the new
 /// frame, returning an error that frames were lost.
 uint8_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
     uint8_t error = PS_PASS;

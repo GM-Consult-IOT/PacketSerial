@@ -1,6 +1,5 @@
 
 /*!
-* @file /*!
 * @file PacketSerial.h
 *
 * @mainpage Serial/HMI Display Library

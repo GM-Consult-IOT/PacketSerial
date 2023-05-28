@@ -114,47 +114,6 @@ typedef struct PS_BYTE_ARRAY{
     } ps_byte_array_t;
 
 
-
-/// @brief Enumeration of PacketSerial errors (range 0x00 - 0x0f).
-typedef enum PS_ERR{
-    
-    /// @brief The operation completed without error
-    PS_PASS  = 0x00,
-
-    // @brief One or more errors occurred during execution of the [begin] method.
-    PS_ERR_START_UP_FAIL  = 0xff,
-
-    /// @brief The frame header is not in the [headers] list.
-    PS_ERR_INVALID_HEADER = 0X02,
-
-    /// @brief Failed to create [rxQueue]
-    PS_ERR_RX_QUEUE_CREATE_FAIL = 0X03,
-
-    /// @brief Failed to create [txQueue]
-    PS_ERR_TX_QUEUE_CREATE_FAIL = 0X04,
-
-    /// @brief Failed to create [errQueue]
-    PS_ERR_ERR_QUEUE_CREATE_FAIL = 0X05,
-
-    /// @brief Failed to add a frame to the [rxQueue]. The queue may be full.
-    PS_ERR_RX_QUEUE_FULL = 0X06,
-
-    /// @brief Failed to add a frame to the [txQueue]. The queue may be full.
-    PS_ERR_TX_QUEUE_FULL = 0x07,
-
-    /// @brief The errQueue is full.
-    PS_ERR_ERR_QUEUE_FULL = 0x08,
-
-    /// @brief Failed to start the [serial_rx] task.
-    PS_ERR_RX_TASK_START_FAIL = 0X09,
-
-    /// @brief Failed to start the [serial_tx] task.
-    PS_ERR_TX_TASK_START_FAIL = 0X0A,
-
-} ps_err_t;
-
- 
-
 /*!
 * @brief Serial communication wrapper for interfacing with serial devices 
 * that use data packets that start with a header word and length byte.
@@ -182,23 +141,20 @@ PacketSerial(std::vector<uint16_t> headers_,
     };
 
 
-    /// @brief Initializes the PacketSerial.
-    uint8_t begin(){
-        uint8_t retVal = 0x00;
-        #if PS_DEBUG
-        retVal += create_err_queue();
-        #endif // PS_DEBUG
-        retVal += create_rx_queue();
-        retVal += create_tx_queue();
-        retVal += start_rx_task();
-        retVal += start_tx_task();
-        if (retVal > 0){
-            onError(PS_ERR_START_UP_FAIL);
-            return PS_ERR_START_UP_FAIL;
-        } else {
-            return onStartup();            
-        }
-    };
+/// @brief Initializes the PacketSerial.
+uint8_t begin(){
+    bool retVal = true;
+    while (retVal){
+    #if PS_DEBUG
+    #endif // PS_DEBUG
+    retVal = retVal && create_rx_queue();
+    retVal = retVal && create_tx_queue();
+    retVal = retVal && start_rx_task();
+    retVal = retVal && start_tx_task();        
+    return onStartup();            
+    }
+    return false;
+};
 
 /// @brief Returns true if the receive queue contains data.
 /// @return the number of items in the queue.
@@ -209,24 +165,9 @@ uint8_t available(void);
 ///         Returns an empty frame if the buffer is empty.
 bool read(ps_byte_array_t & packet);
 
-
-#if PS_DEBUG   
-
-    /// @brief Reads the error the [errQueue].
-    /// @return Returns the next error code from the [errQueue] as ps_frame_t. 
-    ///         Returns 0x00 if the [errQueue] is empty.
-    uint8_t readError(){
-        uint8_t retVal = 0x00;
-     
-        xQueueReceive(errQueue, &(retVal), ( TickType_t ) 10 ) ;
-        return retVal;
-    }
-
-#endif //PS_DEBUG
-
 /// @brief Writes a frame to the txQueue for transmitting by the [serial_tx] task.
 /// @param frame the frame that will be transmitted.
-uint8_t write (ps_byte_array_t * frame);
+bool write (ps_byte_array_t * frame);
 
 /// @brief Returns the array of valid headers used by the PacketSerial instance.
 /// @return The array of valid headers used by the PacketSerial instance.
@@ -250,7 +191,7 @@ std::vector<ps_header_t> headers;
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame reveived from the display.
-virtual uint8_t onSerialRx(ps_byte_array_t * frame);
+virtual bool onSerialRx(ps_byte_array_t * frame);
 
 /// @brief Called whenever a new frame is transmitted to the serial port.
 ///
@@ -262,32 +203,7 @@ virtual uint8_t onSerialRx(ps_byte_array_t * frame);
 virtual void onSerialTx(ps_byte_array_t * frame);
 
 /// @brief called when the [begin] method completes.
-virtual uint8_t onStartup();
-
-/// @brief Call [onError] to send the error code to the errQueue.
-///
-/// The [error] is sent to the errQueue. If the [errQueue] is full, the oldest error 
-/// is popped before the new [error] is pushed.
-///
-/// In debug mode the error is also printed to the serial monitor.
-/// @param error The [PS_ERR] error code as uint8_t.
-void onError(uint8_t error){
-#if PS_DEBUG   
-    if (uxQueueSpacesAvailable(errQueue) <2) {
-        uint8_t poppedErr;
-        
-        while(uxQueueSpacesAvailable(errQueue) < 2){
-            xQueueReceive(errQueue, &(poppedErr), ( TickType_t ) 10 ) ;  
-        }
-        uint8_t full_err = PS_ERR_ERR_QUEUE_FULL;
-        xQueueSend(errQueue, ( void * ) &full_err, (TickType_t ) 10) ;
-        xQueueSend(errQueue, ( void * ) &error, (TickType_t ) 10) ;           
-    } else {
-        xQueueSend(errQueue, ( void * ) &error, (TickType_t ) 10) ;
-    }
-#endif // PS_DEBUG
-    return;
-};
+virtual bool onStartup();
 
 /// @brief The queue containing frames received from the display.
 QueueHandle_t txQueue;
@@ -309,44 +225,41 @@ void serial_tx(void);
 /// @brief  Returns true if the [header] is in the [headers] list.
 /// @param header The header to validate.
 /// @return true if the [header] is in the [headers] list.
-ps_err_t headerValid(ps_header_t header);
+bool headerValid(ps_header_t header);
 
 /// @brief Sends the frame to the rxQueue or txQueue. 
 ///
 /// if the queue is full it will pop the oldest frame and push the new
 /// frame, returning an error that frames were lost.
-uint8_t send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
+bool send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
 
 /// @brief Create the serial RX queue.
-ps_err_t create_rx_queue();
+bool create_rx_queue();
 
 /// @brief Create the serial TX queue.
-ps_err_t create_tx_queue();
-
-/// @brief Create the serial TX queue.
-ps_err_t create_err_queue();
+bool create_tx_queue();
 
 /// @brief Starts the the serial RX task.
-ps_err_t start_rx_task();
+bool start_rx_task();
 
 /// @brief Starts the serial TX task.
-ps_err_t start_tx_task();
+bool start_tx_task();
 
 /// @brief The static delegate of [serial_rx].
 /// @param parameter NULL
 static void serial_rx_impl(void* _this);
 
-/// @brief The static delegate of [serial_tx].
-/// @param _this NULL
-static void serial_tx_impl(void* _this);
+    /// @brief The static delegate of [serial_tx].
+    /// @param _this NULL
+    static void serial_tx_impl(void* _this);
 
-/// @brief Sets the bits in [oldValue] from [newValue] using the [mask].
-/// @param oldValue The byte that will be changed.
-/// @param newValue The new value from which the bits will be copied.
-/// @param mask The mask used to copy bits from [newValue] to [oldValue].
-/// @return A clone of [oldValue] with only the [mask] bits changed to match
-/// [newValue].   
-    uint8_t setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask);
+    /// @brief Sets the bits in [oldValue] from [newValue] using the [mask].
+    /// @param oldValue The byte that will be changed.
+    /// @param newValue The new value from which the bits will be copied.
+    /// @param mask The mask used to copy bits from [newValue] to [oldValue].
+    /// @return A clone of [oldValue] with only the [mask] bits changed to match
+    /// [newValue].   
+    static uint8_t setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask);
 
 private:
 
@@ -356,20 +269,15 @@ private:
 /// @brief The stack size for the serial port TX task
     uint16_t stack_size = PS_STACK_SIZE;
 
-/// @brief The length of the RX queue.
-/// 
-/// Increasing the queue length may require an increase in stack size. 
+    /// @brief The length of the RX queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
     uint8_t rx_queue_length = PS_RX_QUEUE_LENGTH;
 
-/// @brief The length of the TX queue.
-/// 
-/// Increasing the queue length may require an increase in stack size. 
+    /// @brief The length of the TX queue.
+    /// 
+    /// Increasing the queue length may require an increase in stack size. 
     uint8_t tx_queue_length = PS_TX_QUEUE_LENGTH;
-
-/// @brief The length of the ERROR queue.
-/// 
-/// Increasing the queue length may require an increase in stack size. 
-    uint8_t err_queue_length = PS_ERR_QUEUE_LENGTH;
 
 /// @brief The processor core that runs the serial port processes.
     uint8_t core = PS_CORE;

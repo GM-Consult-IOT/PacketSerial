@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+## 0.0.9
+### BREAKING CHANGES
+* Removed all error logging.
+
 ## 0.0.8
 ### BREAKING CHANGES
 * Changed signature of `read` function.

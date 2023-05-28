@@ -153,72 +153,7 @@ typedef enum PS_ERR{
 
 } ps_err_t;
 
-
-// /// @brief A datapacket exchanged with the display via serial communication.
-// /// If [header] is 0x0000 then the packet is considered empty/null.
-// typedef struct PS_FRAME{
-
-//     /// @brief The first two bytes of the data packet as 16 bit word.
-//     ps_header_t header;
-
-//     /// @brief  The number of characters (bytes) after the header.
-//     /// This is equal to data.size().
-//     ps_length_t length;
-
-//     /// @brief The frame data as a uint8_t vector, excluding the header.
-//     std::vector<uint8_t> data;
-
-//     /// @brief Default constructor.
-//     PS_FRAME(){};
-
-//     /// @brief Instantiates a PS_FRAME from the header and frame.
-//     PS_FRAME(ps_header_t header_, std::vector<uint8_t> data_):
-//     header(header_),length(data_.size()),data(data_) {};
-
-//     /// @brief Instantiates a PS_FRAME from the header, length and data.
-//     /// @param header_ The first two bytes of the data packet as 16 bit word.
-//     /// @param length_ The number of characters (bytes) after the header.
-//     /// @param data_ The frame data as a uint8_t-array, excluding the header.
-//     PS_FRAME(ps_header_t header_,  ps_length_t length_, std::vector<uint8_t> data_):
-//         header(header_),length(length_),data(data_) {};
-
-//     /// @brief Instantiates a PS_FRAME from the data packet
-//     /// @param packet The byte-array received.
-//     /// @param packetLength The total number of characters in the packet, including the header.
-//     PS_FRAME(ps_byte_array_t * packet){
-//         header = ((packet->data[0]) << 8) | packet->data[1];
-//                 length = packet->length - 2;
-//                 data.insert(data.begin(),packet->data[2],packet->data[packet->length]);
-//     };
-
-//     #if PS_DEBUG
-
-//     String _toHEX(uint8_t b){
-//         return b > 16? 
-//             "0x" + String(b, HEX): 
-//             "0x0" + String(b, HEX);
-//             };
-
-//     /// @brief Prints the frame all on one line with commas between the bytes.
-//     void print(){       
-//         Serial.print(_toHEX(highByte(header)));
-//         Serial.print(", ");
-//         Serial.print(_toHEX(lowByte(header)));
-//         Serial.print(", ");
-//         Serial.print(_toHEX(length));
-//         Serial.print(", ");
-//        for (uint8_t i = 0; i < data.size(); i++){
-//         if (i>0){ 
-//             Serial.print(", ");  
-//         }
-//         Serial.print(data[i] > 16? 
-//             "0x" + String(data[i], HEX): 
-//             "0x0" + String(data[i], HEX));
-//         }
-//     };
-
-//     #endif // PS_DEBUG
-// } ps_frame_t;    
+ 
 
 /*!
 * @brief Serial communication wrapper for interfacing with serial devices 
@@ -266,13 +201,13 @@ PacketSerial(std::vector<uint16_t> headers_,
     };
 
 /// @brief Returns true if the receive queue contains data.
-/// @return true if the receive queue contains data.
-UBaseType_t available(void);
+/// @return the number of items in the queue.
+uint8_t available(void);
 
 /// @brief Reads the next frame from the [rxQueue].
 /// @return Returns the next frame from the [rxQueue] as ps_frame_t. 
 ///         Returns an empty frame if the buffer is empty.
-ps_byte_array_t read();
+bool read(ps_byte_array_t & packet);
 
 
 #if PS_DEBUG   

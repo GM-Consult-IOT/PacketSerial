@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+## 0.0.8
+### BREAKING CHANGES
+* Changed signature of `read` function.
+
 ## 0.0.7+1
 * Added `ps_header_t header()` method to `PS_BYTE_ARRAY` struct.
 

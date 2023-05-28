@@ -23,28 +23,16 @@
 
 #include <PacketSerial.h>
 
-/// @brief Returns the array of valid headers used by the PacketSerial instance.
-/// @return The array of valid headers used by the PacketSerial instance.
 uint16_t * PacketSerial::getHeaders(){
     return headers.data();
 };
 
-/// @brief Returns true if the receive queue contains data.
-/// @return true if the receive queue contains data.
-UBaseType_t  PacketSerial::available(void){        
+uint8_t  PacketSerial::available(void){        
     return uxQueueMessagesWaiting(rxQueue);
 };
 
-/// @brief Reads the next frame from the [rxQueue].
-/// @return Returns the next frame from the [rxQueue] as ps_frame_t. 
-/// Returns an empty frame if the buffer is empty.
-ps_byte_array_t PacketSerial::read(){
-        ps_byte_array_t frame;
-    if (uxQueueMessagesWaiting(rxQueue)>0){
-        if(xQueueReceive(rxQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){    
-        }
-    } 
-    return frame;       
+bool PacketSerial::read(ps_byte_array_t & packet){  
+    return (xQueueReceive(rxQueue, &( packet ), ( TickType_t ) 10 ) == pdPASS );
 };
 
 /// @brief Writes a frame to the txQueue for transmitting by the [serialTx] task.
@@ -203,18 +191,18 @@ void PacketSerial::serial_rx(void){
 /// @brief Sends the frame to the rxQueue or txQueue. 
 ///
 /// If the queue is full it will pop the oldest frame and push the new
-/// frame, returning an error that frames were lost.
+/// frame.
 uint8_t PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
     uint8_t error = PS_PASS;
     error = error + headerValid(frame->header());
     if (error == PS_PASS){      
-        if (uxQueueSpacesAvailable(q) <1) {
+        if (uxQueueSpacesAvailable(q) < 1) {
             ps_byte_array_t poppedFrame;
             while(uxQueueSpacesAvailable(q) < 1){
                 xQueueReceive(q, &(poppedFrame), ( TickType_t ) 10 ) ;            
             }
-            ps_err_t error = q == rxQueue? PS_ERR_RX_QUEUE_FULL: PS_ERR_TX_QUEUE_FULL;
-            onError(error);                                     
+            // ps_err_t error = q == rxQueue? PS_ERR_RX_QUEUE_FULL: PS_ERR_TX_QUEUE_FULL;
+            // onError(error);                                     
         } 
         xQueueSend(q, ( void * ) frame, (TickType_t ) 10 );
     }

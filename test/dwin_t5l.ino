@@ -37,7 +37,8 @@ void getHeading(){
   //   lib.print();  
 
   // #endif      
-  ps_byte_array_t frame = display.read();
+  ps_byte_array_t frame;
+  display.read(frame);
   #if PS_DEBUG
     Serial.print("Frame: { ");
     frame.print();

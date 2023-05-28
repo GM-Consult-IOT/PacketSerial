@@ -33,7 +33,8 @@ void getHeading(){
   //   lib.print();  
 
   // #endif      
-  ps_byte_array_t frame = device.read();
+  ps_byte_array_t frame;
+  device.read(frame);
   #if PS_DEBUG
   #endif //PS_DEBUG
   uint16_t header = ((frame.data[0]) << 8) | frame.data[1];

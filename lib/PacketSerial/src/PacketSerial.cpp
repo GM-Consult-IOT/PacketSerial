@@ -23,6 +23,21 @@
 
 #include <PacketSerial.h>
 
+/// @brief Initializes the PacketSerial.
+bool PacketSerial::begin(){
+    bool retVal = true;
+    while (retVal){
+    #if PS_DEBUG
+    #endif // PS_DEBUG
+    retVal = retVal && create_rx_queue();
+    retVal = retVal && create_tx_queue();
+    retVal = retVal && start_rx_task();
+    retVal = retVal && start_tx_task();        
+    return onStartup();            
+    }
+    return false;
+};
+
 uint16_t * PacketSerial::getHeaders(){
     return headers.data();
 };

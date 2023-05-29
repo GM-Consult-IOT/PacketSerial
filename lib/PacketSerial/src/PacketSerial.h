@@ -142,19 +142,7 @@ PacketSerial(std::vector<uint16_t> headers_,
 
 
 /// @brief Initializes the PacketSerial.
-uint8_t begin(){
-    bool retVal = true;
-    while (retVal){
-    #if PS_DEBUG
-    #endif // PS_DEBUG
-    retVal = retVal && create_rx_queue();
-    retVal = retVal && create_tx_queue();
-    retVal = retVal && start_rx_task();
-    retVal = retVal && start_tx_task();        
-    return onStartup();            
-    }
-    return false;
-};
+bool begin();
 
 /// @brief Returns true if the receive queue contains data.
 /// @return the number of items in the queue.

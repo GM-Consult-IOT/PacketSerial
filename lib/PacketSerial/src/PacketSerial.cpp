@@ -36,8 +36,16 @@ bool PacketSerial::read(ps_byte_array_t & packet){
 };
 
  
-bool PacketSerial::write(ps_byte_array_t * frame){    
-    return send_to_frame_queue(txQueue, frame);
+bool PacketSerial::write(ps_byte_array_t * frame){ 
+    if (headerValid(frame->header())){
+    return send_to_tx_queue(frame);
+    }  else {
+        Serial.println ("send_to_frame_queue");
+        frame->print();
+        Serial.println();
+        Serial.printf("Header is 0x%X\n",frame->header()); 
+    }
+    return false;
 };
 
 void PacketSerial:: serial_tx(void ){
@@ -55,14 +63,46 @@ void PacketSerial:: serial_tx(void ){
     }
 };
 
+
+bool PacketSerial::send_to_tx_queue(ps_byte_array_t * frame ){
+    bool error = true;
+    bool hv = headerValid(frame->header());
+    if (!hv){
+        #ifdef PS_DEBUG 
+        Serial.println ("send_to_tx_queue");
+        frame->print();
+        Serial.println();
+        Serial.printf("Header is 0x%X\n",frame->header());
+        #endif        
+    } else {
+    if (uxQueueSpacesAvailable(txQueue) < 1) {
+        ps_byte_array_t poppedFrame;
+        while(uxQueueSpacesAvailable(txQueue) < 1){
+            xQueueReceive(txQueue, &(poppedFrame), ( TickType_t ) 10 ) ;            
+        }       
+        #ifdef PS_DEBUG
+        Serial.printf("The TX queue was full, packets were lost\n");
+        frame->print();
+        
+        Serial.println();
+        #endif                             
+    } 
+    return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 10 );
+    }
+   return false;
+};
+
 void PacketSerial:: onSerialTx(ps_byte_array_t * frame){};
 
 bool PacketSerial::headerValid(ps_header_t header){
-    bool isValid = false;    
-    for (const auto& t : headers) { // reference avoids copying element
-        isValid = isValid || (t == header);      // element can not be changed
-    }       
-    return isValid;
+    uint8_t i = 0;
+    while(i < headers.size()){
+        if (headers[i] == header){
+            return true;
+        }
+        i++;
+    }
+    return false;
 };
 
 void PacketSerial::serial_rx(void){
@@ -84,26 +124,22 @@ void PacketSerial::serial_rx(void){
             case 0: // first character, do nothing               
                 break;
             case 1: // second character - if not a valid header, reset byte counter and frame                         
-                if (!headerValid(header)){
-                    #ifdef PS_DEBUG                
-                    Serial.println ("case 1");
-                    frame.print();
-                    Serial.println();
-                    #endif        
+                if (!headerValid(header)){    
                     memset(frame.data,0, sizeof(frame.data));
                     bc = 0;                           
                 }
                 break;                          
             default: //third or higher character - if a new header was received, send the previous packet
-                if (headerValid(header) ){
-                    frame.length = bc - 1;
-                    onSerialRx(&frame);
-                    send_to_frame_queue(rxQueue, &frame);
+                if (headerValid(header) && headerValid(frame.header())){    
+                    if (onSerialRx(&frame)){       
+                        send_to_rx_queue(&frame);
+                    }
                     uint8_t first = (frame.data[bc-1]);
                     bc = 1;
                     memset(frame.data,0, sizeof(frame.data));
                     frame.data[0]= first;
-                }           
+                }  
+                    
             }
             frame.data[bc] = d;
             bc++;
@@ -113,43 +149,50 @@ void PacketSerial::serial_rx(void){
         vTaskDelay(1/portTICK_PERIOD_MS);    
         ticks++;
         if (ticks > 100 && bc > 2){            
-            if (headerValid(frame.header())){
-                onSerialRx(&frame);
-                send_to_frame_queue(rxQueue, &frame);
+            if (headerValid(frame.header())){ 
+                if (onSerialRx(&frame)){        
+                    send_to_rx_queue(&frame);        
+                }
                 bc = 0;
                 memset(frame.data,0, sizeof(frame.data));
                 ticks = 0;
             } else {
                 #ifdef PS_DEBUG                
-                Serial.println ("case else");
+                Serial.println ("ticks > 100 && bc > 2");
                 frame.print();
-                Serial.println();
+                Serial.println();       
+                Serial.printf("Header is 0x%X\n",frame.header());
                 #endif        
             }
         }
     }
 };
 
-bool PacketSerial::send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame ){
+bool PacketSerial::send_to_rx_queue(ps_byte_array_t * frame ){
     bool error = true;
     bool hv = headerValid(frame->header());
     #ifdef PS_DEBUG
     if (!hv){
+        Serial.println ("send_to_rx_queue");
         frame->print();
         Serial.println();
+        Serial.printf("Header is 0x%X\n",frame->header());
     }
     #endif
     error = error && hv;    
-    if (uxQueueSpacesAvailable(q) < 1) {
+    if (uxQueueSpacesAvailable(rxQueue) < 1) {
         ps_byte_array_t poppedFrame;
-        while(uxQueueSpacesAvailable(q) < 1){
-            xQueueReceive(q, &(poppedFrame), ( TickType_t ) 10 ) ;            
+        while(uxQueueSpacesAvailable(rxQueue) < 1){
+            xQueueReceive(rxQueue, &(poppedFrame), ( TickType_t ) 10 ) ;            
         }       
         #ifdef PS_DEBUG
-        Serial.printf("The queue was full, packets were lost\n");
+        Serial.printf("The RX queue was full, packets were lost\n");
+        frame->print();
+        
+        Serial.println();
         #endif                             
     } 
-    return xQueueSend(q, ( void * ) frame, (TickType_t ) 10 );
+    return xQueueSend(rxQueue, ( void * ) frame, (TickType_t ) 10 );
    
 };
 

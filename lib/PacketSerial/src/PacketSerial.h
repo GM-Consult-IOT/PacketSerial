@@ -190,7 +190,10 @@ std::vector<ps_header_t> headers;
 /// classes can override [onSerialRx] to filter the frames or populate device
 /// properties (e.g. configuration) from the received frame.
 ///
-/// @param frame The frame reveived from the display.
+/// Frames can be filtered by return false.
+///
+/// @param frame The frame received from the display.
+/// @return false will prevent a frame from being sent to the frame receive queue.
 virtual bool onSerialRx(ps_byte_array_t * frame);
 
 /// @brief Called whenever a new frame is transmitted to the serial port.
@@ -227,11 +230,17 @@ void serial_tx(void);
 /// @return true if the [header] is in the [headers] list.
 bool headerValid(ps_header_t header);
 
-/// @brief Sends the frame to the rxQueue or txQueue. 
+/// @brief Sends the frame to the rxQueue. 
 ///
 /// if the queue is full it will pop the oldest frame and push the new
 /// frame, returning an error that frames were lost.
-bool send_to_frame_queue(QueueHandle_t q, ps_byte_array_t * frame );
+bool send_to_rx_queue(ps_byte_array_t * frame );
+
+/// @brief Sends the frame to the txQueue. 
+///
+/// if the queue is full it will pop the oldest frame and push the new
+/// frame, returning an error that frames were lost.
+bool send_to_tx_queue(ps_byte_array_t * frame );
 
 /// @brief Create the serial RX queue.
 bool create_rx_queue();

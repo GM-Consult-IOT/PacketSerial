@@ -30,16 +30,19 @@ PacketSerial display = PacketSerial(headers, & displayPort);
 uint16_t heading = -1;
 
 void getHeading(){
-  ps_frame_t frame = display.read();
+  ps_byte_array_t frame;
+  while(  display.read(frame)){
+
   uint16_t address = ((frame.data[1]) << 8) | frame.data[2];
   if (address == 0x5000){
      heading = uint16_t(360 - (((frame.data[4]) << 8) | frame.data[5]) / 2);
+  }
   }
 
 }
 
 void displayReset(){
-        ps_frame_t frame {headers[0], 7, {0x82, 0x00, 0x04, 0x55, 0xAA, 0x5A, 0xA5}};
+        ps_byte_array_t frame  = PS_BYTE_ARRAY( 10, {0x5a, 0xa5, 0x07, 0x82, 0x00, 0x04, 0x55, 0xAA, 0x5A, 0xA5});
         display.write(&frame);  
     };
 

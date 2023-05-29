@@ -104,14 +104,16 @@ void _loop() {
   delay(100);
 }
 
+
+ps_byte_array_t packet;
 void loop() {
   
   // long delay alows testing of exception handler
   delay(50);  
 
-                    
-  
-  uint8_t error = 0xff;                 // placeholder for errors
+while(display.read(packet)){
+  // do nothing for now
+}
 
   /* Check for data from display regularly or the RX queue will fill up, 
   /* causing frames to be lost. The default queue is only 5 frames.*/

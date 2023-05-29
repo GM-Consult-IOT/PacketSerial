@@ -38,15 +38,16 @@ void getHeading(){
 
   // #endif      
   ps_byte_array_t frame; 
-  display.read(frame);
-  #if PS_DEBUG
-    Serial.print("Frame: { ");
-    frame.print();
-    Serial.println(" }");
-  #endif //PS_DEBUG
-  uint16_t address = ((frame.data[4]) << 8) | frame.data[5];
-  if (address == 0x5000){
-     heading = uint16_t(360 - (((frame.data[7]) << 8) | frame.data[8]) / 2);
+  while (display.read(frame)){
+    #if PS_DEBUG
+      Serial.print("Frame: { ");
+      frame.print();
+      Serial.println(" }");
+    #endif //PS_DEBUG
+    uint16_t address = ((frame.data[4]) << 8) | frame.data[5];
+    if (address == 0x5000){
+      heading = uint16_t(360 - (((frame.data[7]) << 8) | frame.data[8]) / 2);
+    }
   }
 
 }
@@ -81,20 +82,11 @@ void setup() {
   // handshake for debugging
   Serial.println("Up and running...");
 
-  uint8_t error = display.begin();
-  Serial.println("Error on startup: " + String(error,HEX));
-  // initialize the display
-  if (error != PS_PASS){
+  if (!display.begin()){
     // uint8_t error = 0xff;
 
     #if PS_DEBUG
-    // The [begin] method returns PS_PASS (0x00) if it completes successfully.
-    while (error != PS_PASS){
-
-      // Read all errors from the device error queue and print to serial monitor
-      error = display.readError();
-      Serial.print("The error code is "); Serial.println(error, HEX);
-    }
+    Serial.println("Error on startup: ");    
     #endif
 
   } else {
@@ -121,30 +113,15 @@ void loop() {
   
   uint8_t error = 0xff;                 // placeholder for errors
 
-  #if PS_DEBUG
-  /* Read errors from display regularly or the error queue will fill up, 
-  /* causing error codes to be popped off the buffer. */
-  while (error != PS_PASS){             
-    error = display.readError();        // read errors until 0x00 is returned
-    if (error>0){                       // print the error
-      Serial.print("Exception [");
-      Serial.print(error, HEX);
-      Serial.println("] was thrown.");
-    }
-  }
-  #endif
   /* Check for data from display regularly or the RX queue will fill up, 
   /* causing frames to be lost. The default queue is only 5 frames.*/
   
-  if (display.available()){
-    while(display.available()>0){
+
       getHeading();
       if (heading<361 && heading >=0)
       {
         Serial.print("Heading: ");              // print the heading value
         Serial.println(heading);      
       }
-    }
-  }
- 
+
 }

@@ -55,10 +55,12 @@ bool PacketSerial::write(ps_byte_array_t * frame){
     if (headerValid(frame->header())){
     return send_to_tx_queue(frame);
     }  else {
+        #if PS_DEBUG
         Serial.println ("send_to_frame_queue");
         frame->print();
         Serial.println();
         Serial.printf("Header is 0x%X\n",frame->header()); 
+        #endif
     }
     return false;
 };
@@ -67,13 +69,15 @@ void PacketSerial:: serial_tx(void ){
     for(;;){
         // vTaskDelay(100/portTICK_RATE_MS);
             ps_byte_array_t frame;
-            if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 10 ) == pdPASS ){
+            if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 25 ) == pdPASS ){
                 // ps_frame_t frm = PS_FRAME(&frame);      
-                onSerialTx(&frame);        
-                ps_length_t lenD = frame.data[2];
-                std::vector<uint8_t> v;                    
-                v.insert(v.end(), &frame.data[0], &frame.data[lenD+3]);
-                ps_serial_port->write(v.data(), v.size());
+                if (onSerialTx(&frame)){        
+                    ps_length_t lenD = frame.data[2];
+                    std::vector<uint8_t> v;                    
+                    v.insert(v.end(), &frame.data[0], &frame.data[lenD+3]);
+                    ps_serial_port->write(v.data(), v.size());
+                    vTaskDelay(25/portTICK_PERIOD_MS); // wait for command to be processed
+                }
             }            
     }
 };
@@ -83,31 +87,33 @@ bool PacketSerial::send_to_tx_queue(ps_byte_array_t * frame ){
     bool error = true;
     bool hv = headerValid(frame->header());
     if (!hv){
-        #ifdef PS_DEBUG 
+        // #if PS_DEBUG 
         Serial.println ("send_to_tx_queue");
         frame->print();
         Serial.println();
         Serial.printf("Header is 0x%X\n",frame->header());
-        #endif        
+        // #endif        
     } else {
     if (uxQueueSpacesAvailable(txQueue) < 1) {
         ps_byte_array_t poppedFrame;
         while(uxQueueSpacesAvailable(txQueue) < 1){
             xQueueReceive(txQueue, &(poppedFrame), ( TickType_t ) 10 ) ;            
         }       
-        #ifdef PS_DEBUG
+        #if PS_DEBUG
         Serial.printf("The TX queue was full, packets were lost\n");
         frame->print();
         
         Serial.println();
         #endif                             
     } 
-    return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 10 );
+    return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 25 );
     }
    return false;
 };
 
-void PacketSerial:: onSerialTx(ps_byte_array_t * frame){};
+bool PacketSerial:: onSerialTx(ps_byte_array_t * frame){
+    return true;
+};
 
 bool PacketSerial::headerValid(ps_header_t header){
     uint8_t i = 0;
@@ -172,7 +178,7 @@ void PacketSerial::serial_rx(void){
                 memset(frame.data,0, sizeof(frame.data));
                 ticks = 0;
             } else {
-                #ifdef PS_DEBUG                
+                #if PS_DEBUG                
                 Serial.println ("ticks > 100 && bc > 2");
                 frame.print();
                 Serial.println();       
@@ -186,7 +192,7 @@ void PacketSerial::serial_rx(void){
 bool PacketSerial::send_to_rx_queue(ps_byte_array_t * frame ){
     bool error = true;
     bool hv = headerValid(frame->header());
-    #ifdef PS_DEBUG
+    #if PS_DEBUG
     if (!hv){
         Serial.println ("send_to_rx_queue");
         frame->print();
@@ -200,7 +206,7 @@ bool PacketSerial::send_to_rx_queue(ps_byte_array_t * frame ){
         while(uxQueueSpacesAvailable(rxQueue) < 1){
             xQueueReceive(rxQueue, &(poppedFrame), ( TickType_t ) 10 ) ;            
         }       
-        #ifdef PS_DEBUG
+        #if PS_DEBUG
         Serial.printf("The RX queue was full, packets were lost\n");
         frame->print();
         

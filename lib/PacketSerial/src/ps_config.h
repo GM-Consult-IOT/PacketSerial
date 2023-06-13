@@ -8,7 +8,7 @@
 
     #ifndef PS_DEBUG
     /// @brief Set to true to enable printing of debug information to Serial.
-    #define PS_DEBUG true
+    #define PS_DEBUG false
     #endif // PS_DEBUG
         
     #ifndef PS_USE_SOFTWARE_SERIAL

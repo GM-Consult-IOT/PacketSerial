@@ -1,5 +1,5 @@
 
-#define PS_DEBUG true
+// #define PS_DEBUG true
 
 #include <PacketSerial.h>
 

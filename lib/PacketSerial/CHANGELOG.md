@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+## 0.0.10
+### BREAKING CHANGES
+* Changed signature of `onSerialTx()` function.
+
 ## 0.0.9
 ### BREAKING CHANGES
 * Removed all error logging.

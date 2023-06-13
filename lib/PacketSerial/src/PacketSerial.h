@@ -97,8 +97,7 @@ typedef struct PS_BYTE_ARRAY{
         }
 
     }
-
-    #if PS_DEBUG
+    
     void print(){
         for (uint8_t i = 0; i < length; i++){
         if (i>0){ 
@@ -109,7 +108,6 @@ typedef struct PS_BYTE_ARRAY{
             "0x0" + String(data[i], HEX));
         }
     };
-    # endif // PS_DEBUG
     
     } ps_byte_array_t;
 
@@ -191,7 +189,7 @@ virtual bool onSerialRx(ps_byte_array_t * frame);
 /// properties (e.g. configuration) from the received frame.
 ///
 /// @param frame The frame sent to the display.
-virtual void onSerialTx(ps_byte_array_t * frame);
+virtual bool onSerialTx(ps_byte_array_t * frame);
 
 /// @brief called when the [begin] method completes.
 virtual bool onStartup();

@@ -69,7 +69,7 @@ void PacketSerial:: serial_tx(void ){
     for(;;){
         // vTaskDelay(100/portTICK_RATE_MS);
             ps_byte_array_t frame;
-            if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 25 ) == pdPASS ){
+            if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 250 ) == pdPASS ){
                 // ps_frame_t frm = PS_FRAME(&frame);      
                 if (onSerialTx(&frame)){        
                     ps_length_t lenD = frame.data[2];

@@ -118,131 +118,131 @@ typedef struct PS_BYTE_ARRAY{
 */
 class PacketSerial{
     
-public:
-    
-/// @brief Instantiates a [PacketSerial] instance.
-/// @param headers_ Valid headers that are placed at the start of a serial data packet.
-/// @param port The serial port that the class instance will use.
-PacketSerial(std::vector<uint16_t> headers_,
-            #if PS_USE_SOFTWARE_SERIAL
-                SoftwareSerial * port
-            #else
-                HardwareSerial * port
-            #endif
-            ) :
-            headers(headers_),   
-            ps_serial_port(port), 
-            rxQueue(NULL), 
-            txQueue(NULL),
-            errQueue(NULL){
+    public:
+        
+    /// @brief Instantiates a [PacketSerial] instance.
+    /// @param headers_ Valid headers that are placed at the start of a serial data packet.
+    /// @param port The serial port that the class instance will use.
+    PacketSerial(std::vector<uint16_t> headers_,
+                #if PS_USE_SOFTWARE_SERIAL
+                    SoftwareSerial * port
+                #else
+                    HardwareSerial * port
+                #endif
+                ) :
+                headers(headers_),   
+                ps_serial_port(port), 
+                rxQueue(NULL), 
+                txQueue(NULL),
+                errQueue(NULL){
 
-    };
+        };
 
 
-/// @brief Initializes the PacketSerial.
-bool begin();
+    /// @brief Initializes the PacketSerial.
+    bool begin();
 
-/// @brief Returns true if the receive queue contains data.
-/// @return the number of items in the queue.
-uint8_t available(void);
+    /// @brief Returns true if the receive queue contains data.
+    /// @return the number of items in the queue.
+    uint8_t available(void);
 
-/// @brief Reads the next frame from the [rxQueue].
-/// @return Returns the next frame from the [rxQueue] as ps_frame_t. 
-///         Returns an empty frame if the buffer is empty.
-bool read(ps_byte_array_t & packet);
+    /// @brief Reads the next frame from the [rxQueue] to [frame].
+    /// @return Returns false if the buffer is empty, true if [frame] 
+    /// was populated from the queue.
+    bool read(ps_byte_array_t & packet);
 
-/// @brief Writes a frame to the txQueue for transmitting by the [serial_tx] task.
-/// @param frame the frame that will be transmitted.
-bool write (ps_byte_array_t * frame);
+    /// @brief Writes a frame to the txQueue for transmitting by the [serial_tx] task.
+    /// @param frame the frame that will be transmitted.
+    bool write (ps_byte_array_t * frame);
 
-/// @brief Returns the array of valid headers used by the PacketSerial instance.
-/// @return The array of valid headers used by the PacketSerial instance.
-uint16_t * getHeaders();
+    /// @brief Returns the array of valid headers used by the PacketSerial instance.
+    /// @return The array of valid headers used by the PacketSerial instance.
+    uint16_t * getHeaders();
 
-protected:
+    protected:
 
-#if PS_USE_SOFTWARE_SERIAL
-    SoftwareSerial * ps_serial_port;
-#else
-    HardwareSerial * ps_serial_port;
-#endif // PS_USE_SOFTWARE_SERIAL
+    #if PS_USE_SOFTWARE_SERIAL
+        SoftwareSerial * ps_serial_port;
+    #else
+        HardwareSerial * ps_serial_port;
+    #endif // PS_USE_SOFTWARE_SERIAL
 
-/// @brief The valid headers used by the PacketSerial instance.
-std::vector<ps_header_t> headers;
+    /// @brief The valid headers used by the PacketSerial instance.
+    std::vector<ps_header_t> headers;
 
-/// @brief Called whenever a new frame is received from the serial port.
-///
-/// The base class implementation sends the frame to the rxQueue. Implementing
-/// classes can override [onSerialRx] to filter the frames or populate device
-/// properties (e.g. configuration) from the received frame.
-///
-/// Frames can be filtered by return false.
-///
-/// @param frame The frame received from the display.
-/// @return false will prevent a frame from being sent to the frame receive queue.
-virtual bool onSerialRx(ps_byte_array_t * frame);
+    /// @brief Called whenever a new frame is received from the serial port.
+    ///
+    /// The base class implementation sends the frame to the rxQueue. Implementing
+    /// classes can override [onSerialRx] to filter the frames or populate device
+    /// properties (e.g. configuration) from the received frame.
+    ///
+    /// Frames can be filtered by return false.
+    ///
+    /// @param frame The frame received from the display.
+    /// @return false will prevent a frame from being sent to the frame receive queue.
+    virtual bool onSerialRx(ps_byte_array_t * frame);
 
-/// @brief Called whenever a new frame is transmitted to the serial port.
-///
-/// The base class implementation sends the frame to the rxQueue. Implementing
-/// classes can override [onSerialRx] to filter the frames or populate device
-/// properties (e.g. configuration) from the received frame.
-///
-/// @param frame The frame sent to the display.
-virtual bool onSerialTx(ps_byte_array_t * frame);
+    /// @brief Called whenever a new frame is transmitted to the serial port.
+    ///
+    /// The base class implementation sends the frame to the rxQueue. Implementing
+    /// classes can override [onSerialRx] to filter the frames or populate device
+    /// properties (e.g. configuration) from the received frame.
+    ///
+    /// @param frame The frame sent to the display.
+    virtual bool onSerialTx(ps_byte_array_t * frame);
 
-/// @brief called when the [begin] method completes.
-virtual bool onStartup();
+    /// @brief called when the [begin] method completes.
+    virtual bool onStartup();
 
-/// @brief The queue containing frames received from the display.
-QueueHandle_t txQueue;
+    /// @brief The queue containing frames received from the display.
+    QueueHandle_t txQueue;
 
-/// @brief The queue containing frames to be sent to the display.
-QueueHandle_t rxQueue;
+    /// @brief The queue containing frames to be sent to the display.
+    QueueHandle_t rxQueue;
 
-/// @brief The queue containing frames to be sent to the display.
-QueueHandle_t errQueue;
+    /// @brief The queue containing frames to be sent to the display.
+    QueueHandle_t errQueue;
 
-/// @brief The task that processes with data received from the display on [serialPort].
-/// @param parameter NULL
-void serial_rx(void);
+    /// @brief The task that processes with data received from the display on [serialPort].
+    /// @param parameter NULL
+    void serial_rx(void);
 
-/// @brief The task that processes with data sent to the display on [serialPort].
-/// @param parameter NULL
-void serial_tx(void);
+    /// @brief The task that processes with data sent to the display on [serialPort].
+    /// @param parameter NULL
+    void serial_tx(void);
 
-/// @brief  Returns true if the [header] is in the [headers] list.
-/// @param header The header to validate.
-/// @return true if the [header] is in the [headers] list.
-bool headerValid(ps_header_t header);
+    /// @brief  Returns true if the [header] is in the [headers] list.
+    /// @param header The header to validate.
+    /// @return true if the [header] is in the [headers] list.
+    bool headerValid(ps_header_t header);
 
-/// @brief Sends the frame to the rxQueue. 
-///
-/// if the queue is full it will pop the oldest frame and push the new
-/// frame, returning an error that frames were lost.
-bool send_to_rx_queue(ps_byte_array_t * frame );
+    /// @brief Sends the frame to the rxQueue. 
+    ///
+    /// if the queue is full it will pop the oldest frame and push the new
+    /// frame, returning an error that frames were lost.
+    bool send_to_rx_queue(ps_byte_array_t * frame );
 
-/// @brief Sends the frame to the txQueue. 
-///
-/// if the queue is full it will pop the oldest frame and push the new
-/// frame, returning an error that frames were lost.
-bool send_to_tx_queue(ps_byte_array_t * frame );
+    /// @brief Sends the frame to the txQueue. 
+    ///
+    /// if the queue is full it will pop the oldest frame and push the new
+    /// frame, returning an error that frames were lost.
+    bool send_to_tx_queue(ps_byte_array_t * frame );
 
-/// @brief Create the serial RX queue.
-bool create_rx_queue();
+    /// @brief Create the serial RX queue.
+    bool create_rx_queue();
 
-/// @brief Create the serial TX queue.
-bool create_tx_queue();
+    /// @brief Create the serial TX queue.
+    bool create_tx_queue();
 
-/// @brief Starts the the serial RX task.
-bool start_rx_task();
+    /// @brief Starts the the serial RX task.
+    bool start_rx_task();
 
-/// @brief Starts the serial TX task.
-bool start_tx_task();
+    /// @brief Starts the serial TX task.
+    bool start_tx_task();
 
-/// @brief The static delegate of [serial_rx].
-/// @param parameter NULL
-static void serial_rx_impl(void* _this);
+    /// @brief The static delegate of [serial_rx].
+    /// @param parameter NULL
+    static void serial_rx_impl(void* _this);
 
     /// @brief The static delegate of [serial_tx].
     /// @param _this NULL
@@ -256,12 +256,12 @@ static void serial_rx_impl(void* _this);
     /// [newValue].   
     static uint8_t setBitValues(uint8_t oldValue, uint8_t newValue, uint8_t mask);
 
-private:
+    private:
 
-/// @brief The priority of the serial monitor tasks.
+    /// @brief The priority of the serial monitor tasks.
     uint8_t task_priority = PS_TASK_PRIORITY;
 
-/// @brief The stack size for the serial port TX task
+    /// @brief The stack size for the serial port TX task
     uint16_t stack_size = PS_STACK_SIZE;
 
     /// @brief The length of the RX queue.
@@ -274,7 +274,7 @@ private:
     /// Increasing the queue length may require an increase in stack size. 
     uint8_t tx_queue_length = PS_TX_QUEUE_LENGTH;
 
-/// @brief The processor core that runs the serial port processes.
+    /// @brief The processor core that runs the serial port processes.
     uint8_t core = PS_CORE;
 
 };

@@ -29,6 +29,8 @@
 #ifndef PACKET_SERIAL   // HEADER GUARD, do not remove
 #define PACKET_SERIAL   // HEADER GUARD, do not remove
 
+#define MINIMUM_TASK_HIGHWATER_MARK 0XFF
+
 #include "ps_config.h"
 
 #if ARDUINO >= 100
@@ -86,12 +88,7 @@ typedef struct PS_BYTE_ARRAY{
     PS_BYTE_ARRAY(){};
 
     PS_BYTE_ARRAY(uint8_t length_, uint8_t * data_){        
-        // Serial.println("Header: 0x" + String(header_, HEX));
         length = length_;
-        // data[0] = (header_ >> 8) & 0xff;        
-        // // Serial.println("data[0]: 0x" + String(data[0], HEX));
-        // data[1] = header_ & 0xff;        
-        // Serial.println("data[1]: 0x" + String(data[1], HEX));
         for (uint8_t i = 0; i < length_; i++){
             data[i] = data_[i];
         }

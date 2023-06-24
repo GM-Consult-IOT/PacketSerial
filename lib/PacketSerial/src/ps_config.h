@@ -8,7 +8,7 @@
 
     #ifndef PS_DEBUG
     /// @brief Set to true to enable printing of debug information to Serial.
-    #define PS_DEBUG false
+    #define PS_DEBUG true
     #endif // PS_DEBUG
         
     #ifndef PS_USE_SOFTWARE_SERIAL
@@ -29,7 +29,7 @@
 
     #ifndef MAX_FRAME_LENGTH
     /// @brief The maximum length of a data packet.
-    #define MAX_FRAME_LENGTH 255
+    #define MAX_FRAME_LENGTH 0xffU
     #endif // MAX_FRAME_LENGTH
 
     #ifndef PS_TASK_PRIORITY
@@ -39,29 +39,18 @@
 
     #ifndef PS_STACK_SIZE
     /// @brief The stack size for the serial port RX task.
-    #define PS_STACK_SIZE 10800
+    #define PS_STACK_SIZE 0x900U
     #endif // PS_STACK_SIZE
 
     #ifndef PS_RX_QUEUE_LENGTH
     /// @brief The length of the RX queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
     #define PS_RX_QUEUE_LENGTH 10
     #endif // PS_RX_QUEUE_LENGTH
 
     #ifndef PS_TX_QUEUE_LENGTH
     /// @brief The length of the TX queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
     #define PS_TX_QUEUE_LENGTH 10
     #endif // PS_TX_QUEUE_LENGTH
-
-    #ifndef PS_ERR_QUEUE_LENGTH
-    /// @brief The length of the ERROR queue.
-    /// 
-    /// Increasing the queue length may require an increase in stack size. 
-    #define PS_ERR_QUEUE_LENGTH 255
-    #endif // PS_ERR_QUEUE_LENGTH
 
     #ifndef PS_BAUD
     /// @brief The default serial port speed.

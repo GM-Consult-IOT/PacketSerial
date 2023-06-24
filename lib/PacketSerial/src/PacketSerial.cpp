@@ -52,64 +52,64 @@ bool PacketSerial::read(ps_byte_array_t & packet){
 
  
 bool PacketSerial::write(ps_byte_array_t * frame){ 
-    if (headerValid(frame->header())){
-    return send_to_tx_queue(frame);
-    }  else {
-        #if PS_DEBUG
-        Serial.println ("send_to_frame_queue");
+    #if PS_DEBUG 
+    if (!headerValid(frame->header())){
+        
+        Serial.println ("send_to_tx_queue");
         frame->print();
         Serial.println();
-        Serial.printf("Header is 0x%X\n",frame->header()); 
-        #endif
-    }
-    return false;
+        Serial.printf("Header is 0x%X\n",frame->header());
+    } 
+    if (uxQueueSpacesAvailable(txQueue) < 1) {
+        Serial.printf("The TX queue was full, packets were lost\n");
+        frame->print();        
+        Serial.println();                                
+    } 
+    #endif        
+    return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 1 );
 };
 
 void PacketSerial:: serial_tx(void ){
+    #if PS_DEBUG    
+    UBaseType_t uxHighWaterMark;
+    #endif
+    ps_byte_array_t frame;
     for(;;){
-        // vTaskDelay(100/portTICK_RATE_MS);
-            ps_byte_array_t frame;
-            if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 250 ) == pdPASS ){
-                // ps_frame_t frm = PS_FRAME(&frame);      
+            if(xQueueReceive(txQueue, &( frame ), ( TickType_t ) 500 ) == pdPASS ){
                 if (onSerialTx(&frame)){        
-                    ps_length_t lenD = frame.data[2];
-                    std::vector<uint8_t> v;                    
-                    v.insert(v.end(), &frame.data[0], &frame.data[lenD+3]);
-                    ps_serial_port->write(v.data(), v.size());
-                    vTaskDelay(25/portTICK_PERIOD_MS); // wait for command to be processed
-                }
+                     ps_serial_port->write(frame.data, frame.length);
+                    vTaskDelay(1/portTICK_PERIOD_MS);
+                }                
+            #if PS_DEBUG    
+            // send remaining stack size for this task to debug serial port
+            uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+            if (uxHighWaterMark < MINIMUM_TASK_HIGHWATER_MARK){            
+                Serial.printf("The highwatermark in [serial_tx] is at 0X%X\n", uxHighWaterMark);    
+            }
+            #endif
             }            
     }
 };
 
 
-bool PacketSerial::send_to_tx_queue(ps_byte_array_t * frame ){
-    bool error = true;
-    bool hv = headerValid(frame->header());
-    if (!hv){
-        // #if PS_DEBUG 
-        Serial.println ("send_to_tx_queue");
-        frame->print();
-        Serial.println();
-        Serial.printf("Header is 0x%X\n",frame->header());
-        // #endif        
-    } else {
-    if (uxQueueSpacesAvailable(txQueue) < 1) {
-        ps_byte_array_t poppedFrame;
-        while(uxQueueSpacesAvailable(txQueue) < 1){
-            xQueueReceive(txQueue, &(poppedFrame), ( TickType_t ) 10 ) ;            
-        }       
-        #if PS_DEBUG
-        Serial.printf("The TX queue was full, packets were lost\n");
-        frame->print();
+// bool PacketSerial::send_to_tx_queue(ps_byte_array_t * frame ){
+//     #if PS_DEBUG 
+//     bool hv = headerValid(frame->header());
+//     if (!hv){
         
-        Serial.println();
-        #endif                             
-    } 
-    return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 25 );
-    }
-   return false;
-};
+//         Serial.println ("send_to_tx_queue");
+//         frame->print();
+//         Serial.println();
+//         Serial.printf("Header is 0x%X\n",frame->header());
+//     } 
+//     if (uxQueueSpacesAvailable(txQueue) < 1) {
+//         Serial.printf("The TX queue was full, packets were lost\n");
+//         frame->print();        
+//         Serial.println();                                
+//     } 
+//     #endif        
+//     return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 1 );
+// };
 
 bool PacketSerial:: onSerialTx(ps_byte_array_t * frame){
     return true;
@@ -127,18 +127,20 @@ bool PacketSerial::headerValid(ps_header_t header){
 };
 
 void PacketSerial::serial_rx(void){
-    // Serial.println("serial_rx(void)");
-    ps_length_t length;        
-    ps_byte_array_t frame;           // the frame being received
+    ps_length_t length;
+    ps_byte_array_t frame;  
     memset(frame.data,0, sizeof(frame.data));
-    uint8_t bc;                 // byte counter
+    uint8_t bc;
     uint32_t ticks = 0;
+    #ifdef PS_DEBUG    
+    UBaseType_t uxHighWaterMark;
+    #endif
     for(;;){
         while (ps_serial_port->available()>0){
             ps_header_t header;
-            ticks = 0;                
-            uint8_t d = (uint8_t)ps_serial_port->read();            
-            if (bc>0){
+            ticks = 0;
+            uint8_t d = (uint8_t)ps_serial_port->read();
+            if (bc > 0){
                 header = ((frame.data[bc-1]) << 8) | d;
             }
             switch (bc){
@@ -153,12 +155,20 @@ void PacketSerial::serial_rx(void){
             default: //third or higher character - if a new header was received, send the previous packet
                 if (headerValid(header) && headerValid(frame.header())){    
                     if (onSerialRx(&frame)){       
-                        send_to_rx_queue(&frame);
+                        send_to_rx_queue(&frame);                        
                     }
+                    // clear the frame and populate the first header character
                     uint8_t first = (frame.data[bc-1]);
                     bc = 1;
                     memset(frame.data,0, sizeof(frame.data));
-                    frame.data[0]= first;
+                    frame.data[0]= first; 
+                    #if PS_DEBUG    
+                    // send remaining stack size for this task to debug serial port
+                    uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );     
+                    if (uxHighWaterMark < MINIMUM_TASK_HIGHWATER_MARK){            
+                        Serial.printf("The highwatermark in [serial_rx] is at 0X%X\n", uxHighWaterMark);    
+                    }
+                    #endif
                 }  
                     
             }
@@ -169,52 +179,51 @@ void PacketSerial::serial_rx(void){
         }    
         vTaskDelay(1/portTICK_PERIOD_MS);    
         ticks++;
-        if (ticks > 100 && bc > 2){            
+        if (ticks > 10 && bc > 2){            // send the frame if nothing is heard for 10ms
             if (headerValid(frame.header())){ 
                 if (onSerialRx(&frame)){        
                     send_to_rx_queue(&frame);        
                 }
                 bc = 0;
                 memset(frame.data,0, sizeof(frame.data));
-                ticks = 0;
-            } else {
-                #if PS_DEBUG                
-                Serial.println ("ticks > 100 && bc > 2");
-                frame.print();
-                Serial.println();       
-                Serial.printf("Header is 0x%X\n",frame.header());
-                #endif        
+                ticks = 0;               
+                #if PS_DEBUG    
+                // send remaining stack size for this task to debug serial port
+                uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );     
+                if (uxHighWaterMark < MINIMUM_TASK_HIGHWATER_MARK){            
+                    Serial.printf("The highwatermark in [serial_rx] is at 0X%X\n", uxHighWaterMark);    
+                }
+                #endif
             }
         }
+        //  else {
+        //     #if PS_DEBUG                
+        //     Serial.println ("ticks > 100 && bc > 2");
+        //     frame.print();
+        //     Serial.println();       
+        //     Serial.printf("Header is 0x%X\n",frame.header());
+        //     #endif        
+        // } 
     }
 };
 
 bool PacketSerial::send_to_rx_queue(ps_byte_array_t * frame ){
-    bool error = true;
-    bool hv = headerValid(frame->header());
     #if PS_DEBUG
+    bool hv = headerValid(frame->header());
     if (!hv){
-        Serial.println ("send_to_rx_queue");
+        Serial.println ("Invalid header at [send_to_rx_queue]");
         frame->print();
         Serial.println();
         Serial.printf("Header is 0x%X\n",frame->header());
     }
-    #endif
-    error = error && hv;    
     if (uxQueueSpacesAvailable(rxQueue) < 1) {
-        ps_byte_array_t poppedFrame;
-        while(uxQueueSpacesAvailable(rxQueue) < 1){
-            xQueueReceive(rxQueue, &(poppedFrame), ( TickType_t ) 10 ) ;            
-        }       
-        #if PS_DEBUG
         Serial.printf("The RX queue was full, packets were lost\n");
         frame->print();
         
         Serial.println();
-        #endif                             
-    } 
-    return xQueueSend(rxQueue, ( void * ) frame, (TickType_t ) 10 );
-   
+    }
+    #endif                  
+    return xQueueSend(rxQueue, ( void * ) frame, (TickType_t ) 1 );   
 };
 
 bool PacketSerial::onSerialRx(ps_byte_array_t * frame){

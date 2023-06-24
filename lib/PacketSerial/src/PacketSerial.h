@@ -28,9 +28,6 @@
 
 #ifndef PACKET_SERIAL   // HEADER GUARD, do not remove
 #define PACKET_SERIAL   // HEADER GUARD, do not remove
-
-#define MINIMUM_TASK_HIGHWATER_MARK 0XFF
-
 #include "ps_config.h"
 
 #if ARDUINO >= 100

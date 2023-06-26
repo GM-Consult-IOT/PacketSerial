@@ -34,6 +34,13 @@
     #define MINIMUM_TASK_HIGHWATER_MARK 0X200
     #endif //MINIMUM_TASK_HIGHWATER_MARK
 
+        #ifndef MAXIMUM_TASK_HIGHWATER_MARK
+    /// @brief If the remaining is above this value
+    /// A warning will be printed to the SerialPort if PS_DEBUG 
+    /// is true
+    #define MAXIMUM_TASK_HIGHWATER_MARK 0X1000
+    #endif //MAXIMUM_TASK_HIGHWATER_MARK
+
     #ifndef MAX_FRAME_LENGTH
     /// @brief The maximum length of a data packet.
     #define MAX_FRAME_LENGTH 0xffU

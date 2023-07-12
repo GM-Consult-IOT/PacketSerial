@@ -50,8 +50,7 @@ bool PacketSerial::read(ps_byte_array_t & packet){
     return (xQueueReceive(rxQueue, &( packet ), ( TickType_t ) 10 ) == pdPASS );
 };
 
- 
-bool PacketSerial::write(ps_byte_array_t * frame){ 
+ bool PacketSerial::write(ps_byte_array_t * frame){ 
     #if PS_DEBUG 
     if (!headerValid(frame->header())){
         

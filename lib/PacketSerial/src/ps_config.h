@@ -34,7 +34,7 @@
     #define MINIMUM_TASK_HIGHWATER_MARK 0X200
     #endif //MINIMUM_TASK_HIGHWATER_MARK
 
-        #ifndef MAXIMUM_TASK_HIGHWATER_MARK
+    #ifndef MAXIMUM_TASK_HIGHWATER_MARK
     /// @brief If the remaining is above this value
     /// A warning will be printed to the SerialPort if PS_DEBUG 
     /// is true

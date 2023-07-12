@@ -53,7 +53,7 @@
 
     #ifndef PS_STACK_SIZE
     /// @brief The stack size for the serial port RX task.
-    #define PS_STACK_SIZE 0x900U
+    #define PS_STACK_SIZE 0x2000U
     #endif // PS_STACK_SIZE
 
     #ifndef PS_RX_QUEUE_LENGTH

@@ -38,7 +38,7 @@
     /// @brief If the remaining is above this value
     /// A warning will be printed to the SerialPort if PS_DEBUG 
     /// is true
-    #define MAXIMUM_TASK_HIGHWATER_MARK 0X1000
+    #define MAXIMUM_TASK_HIGHWATER_MARK 0X2000
     #endif //MAXIMUM_TASK_HIGHWATER_MARK
 
     #ifndef MAX_FRAME_LENGTH

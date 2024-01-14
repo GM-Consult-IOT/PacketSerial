@@ -166,7 +166,7 @@ void PacketSerial::serial_rx(void){
                     // send remaining stack size for this task to debug serial port
                     uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );     
                     if (uxHighWaterMark < MINIMUM_TASK_HIGHWATER_MARK || 
-            uxHighWaterMark > MAXIMUM_TASK_HIGHWATER_MARK){            
+                        uxHighWaterMark > MAXIMUM_TASK_HIGHWATER_MARK){            
                         Serial.printf("The highwatermark in [serial_rx] is at 0X%X\n", uxHighWaterMark);    
                     }
                     #endif

@@ -1,5 +1,9 @@
 <!-- PacketSerial -->
 
+
+## 0.0.10+1
+* Minor edits.
+
 ## 0.0.10
 ### BREAKING CHANGES
 * Changed signature of `onSerialTx()` function.

@@ -52,8 +52,7 @@ bool PacketSerial::read(ps_byte_array_t & packet){
 
  bool PacketSerial::write(ps_byte_array_t * frame){ 
     #if PS_DEBUG 
-    if (!headerValid(frame->header())){
-        
+    if (!headerValid(frame->header())){        
         Serial.println ("send_to_tx_queue");
         frame->print();
         Serial.println();
@@ -220,11 +219,11 @@ bool PacketSerial::send_to_rx_queue(ps_byte_array_t * frame ){
     }
     if (uxQueueSpacesAvailable(rxQueue) < 1) {
         Serial.printf("The RX queue was full, packets were lost\n");
-        frame->print();
-        
+        frame->print();        
         Serial.println();
     }
-    #endif                  
+    #endif       
+    // Serial.println("Sending received packet to queue");           
     return xQueueSend(rxQueue, ( void * ) frame, (TickType_t ) 1 );   
 };
 

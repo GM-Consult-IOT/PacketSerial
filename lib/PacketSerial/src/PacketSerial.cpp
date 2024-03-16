@@ -59,9 +59,11 @@ bool PacketSerial::read(ps_byte_array_t & packet){
         Serial.printf("Header is 0x%X\n",frame->header());
     } 
     if (uxQueueSpacesAvailable(txQueue) < 1) {
-        Serial.printf("The TX queue was full, packets were lost\n");
+        #if PS_DEBUG 
+        // Serial.printf("The TX queue was full, packets were lost\n");
         frame->print();        
         Serial.println();                                
+        #endif
     } 
     #endif        
     return xQueueSend(txQueue, ( void * ) frame, (TickType_t ) 1 );
